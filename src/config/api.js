@@ -1,0 +1,38 @@
+import axios from 'axios'
+
+export const API_BASE_URL = 'https://nexus-n8n.2wdiso.easypanel.host/a/'
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Request interceptor - adiciona token JWT no header
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('nexushub_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// Response interceptor - trata erros globais
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('nexushub_token')
+      localStorage.removeItem('nexushub_user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+export default api
