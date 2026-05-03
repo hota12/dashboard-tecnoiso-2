@@ -621,3 +621,63 @@ img {
   font-size: var(--font-sm);
   font-weight: 600;
 }
+
+/* ============================================
+   PRINT / PDF EXPORT
+   ============================================ */
+@media print {
+  /* Preserva cores de fundo e texto exatos */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Esconde tudo que não é conteúdo da dashboard */
+  .sidebar,
+  .sidebar-overlay,
+  .sidebar-toggle,
+  .mobile-topbar,
+  .filters-bar,
+  .fullscreen-bar,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  /* Layout: transforma flex em block para impressão */
+  .app-layout {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .main-content {
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+
+  /* Remove scroll do conteúdo e padding extra */
+  .dashboard-view {
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .dashboard-content {
+    padding: 16px !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Evita quebra de página dentro de cards e tabelas */
+  .card,
+  .table-wrapper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Remove animações e sombras que podem sair estranho no PDF */
+  .skeleton {
+    animation: none !important;
+  }
+}

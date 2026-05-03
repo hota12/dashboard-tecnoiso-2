@@ -60,6 +60,25 @@
               </button>
             </div>
 
+            <!-- Divisor -->
+            <div class="action-divider"></div>
+
+            <!-- Grupo: Exportar -->
+            <div class="action-group">
+              <div class="pdf-btn-wrapper">
+                <button
+                  class="btn btn-secondary btn-icon"
+                  @click="exportPdf"
+                  :disabled="exportingPdf"
+                  data-tooltip="Exportar PDF (beta)"
+                >
+                  <span v-if="exportingPdf" class="spinner" style="width:16px;height:16px;border-width:2px"></span>
+                  <i v-else class="bi bi-file-earmark-pdf"></i>
+                </button>
+                <span class="pdf-beta-badge">beta</span>
+              </div>
+            </div>
+
             <!-- Admin dropdown -->
             <template v-if="authStore.isAdmin">
               <div class="action-divider"></div>
@@ -152,7 +171,7 @@
     </div>
 
     <!-- Dashboard content -->
-    <div class="dashboard-content">
+    <div class="dashboard-content" ref="dashboardContentRef">
       <!-- Loading state -->
       <div v-if="dashboardStore.loading" class="dashboard-loading">
         <div class="skeleton skeleton-chart"></div>
@@ -510,13 +529,15 @@ const usersStore = useUsersStore()
 function roleLabel(r) { return { super: 'Super', admin: 'Admin', member: 'Membro' }[r] || r }
 
 const showRefreshModal = ref(false)
-const showFontsPanel = ref(false)
-const showDeleteDash = ref(false)
-const deletingDash = ref(false)
-const refreshInterval = ref(60)
-const adminMenuOpen = ref(false)
+const showFontsPanel   = ref(false)
+const showDeleteDash   = ref(false)
+const deletingDash     = ref(false)
+const refreshInterval  = ref(60)
+const adminMenuOpen    = ref(false)
 const adminDropdownRef = ref(null)
-const filtersExpanded = ref(false)
+const filtersExpanded  = ref(false)
+const exportingPdf     = ref(false)
+const dashboardContentRef = ref(null)
 
 function handleClickOutside(e) {
   if (adminDropdownRef.value && !adminDropdownRef.value.contains(e.target)) {
@@ -778,6 +799,185 @@ function stopRefresh() {
 function toggleFullscreen() {
   dashboardStore.toggleFullscreen()
   updateUrl()
+}
+
+async function exportPdf() {
+  const element = dashboardContentRef.value
+  if (!element) return
+
+  exportingPdf.value = true
+  const dashName = dashboardStore.currentDashboard?.name || 'dashboard'
+
+  try {
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
+
+    // Lê as cores do tema a partir das CSS Variables
+    const rootStyle  = getComputedStyle(document.documentElement)
+    const sidebarBg  = rootStyle.getPropertyValue('--color-sidebar-bg').trim()  || '#313131'
+    const sidebarTxt = rootStyle.getPropertyValue('--color-sidebar-text').trim() || '#ffffff'
+
+    // Período analisado formatado em DD/MM/AAAA
+    const fmtDate = (d) => d ? d.split('-').reverse().join('/') : ''
+    const { startDate, endDate } = dashboardStore.filters
+    const period = [fmtDate(startDate), fmtDate(endDate)].filter(Boolean).join(' — ')
+
+    // Pré-processa a logo como imagem branca via Canvas API
+    // (evita problemas do html2canvas com CSS filter)
+    const logoDataUrl = await new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const cvs = document.createElement('canvas')
+          cvs.width  = img.naturalWidth
+          cvs.height = img.naturalHeight
+          const ctx  = cvs.getContext('2d')
+          ctx.filter = 'brightness(0) invert(1)'
+          ctx.drawImage(img, 0, 0)
+          resolve(cvs.toDataURL('image/png'))
+        } catch {
+          resolve('/logo.png')
+        }
+      }
+      img.onerror = () => resolve('/logo.png')
+      img.src = '/logo.png'
+    })
+
+    const canvas = await html2canvas(element, {
+      scale:       1.5,
+      useCORS:     true,
+      logging:     false,
+      windowWidth: 1600,
+      onclone: (doc) => {
+        // ── Injeta overrides com !important ─────────────────────────────
+        // Inline styles individuais não sobrescrevem estilos Vue com data-v-*
+        // Uma <style> com !important garante prioridade sobre tudo
+        const fix = doc.createElement('style')
+        fix.textContent = `
+          /* Fix 1: letter-spacing é a principal causa de texto deslocado no html2canvas */
+          * { letter-spacing: 0 !important; box-sizing: border-box !important; }
+
+          /* Fix 2: inline-flex nos badges faz o texto sair da posição */
+          .badge, .pct-chip, .type-chip, .chip {
+            display: inline-block !important;
+            line-height: 1.8 !important;
+            vertical-align: middle !important;
+          }
+
+          /* Fix 3: text-overflow ellipsis + overflow hidden desloca texto */
+          .stat-label, .campaign-name, .nav-label, .lb-caption {
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+          }
+
+          /* Fix 4: contenção de largura — impede elementos de "estufar" além da folha */
+          .dashboard-content {
+            width: 1600px !important;
+            max-width: 1600px !important;
+            overflow: hidden !important;
+          }
+          .table-wrapper {
+            overflow: hidden !important;
+            max-width: 100% !important;
+          }
+          .table {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          td, th {
+            word-break: break-word;
+            max-width: 0;
+          }
+          img {
+            max-width: 100% !important;
+          }
+          .stats-grid {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .stat-card {
+            min-width: 0 !important;
+            overflow: hidden !important;
+          }
+        `
+        doc.head.appendChild(fix)
+
+        // ── Header do PDF ──────────────────────────────────────────────────
+        const header = doc.createElement('div')
+        header.style.cssText = `
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 18px 28px;
+          background: ${sidebarBg};
+          border-radius: 12px;
+          margin-bottom: 20px;
+        `
+
+        // Esquerda: container com nome + período
+        const leftEl = doc.createElement('div')
+        leftEl.style.cssText = 'display:flex;flex-direction:column;gap:4px;'
+
+        const nameEl = doc.createElement('p')
+        nameEl.textContent = dashName
+        nameEl.style.cssText = `
+          color: ${sidebarTxt};
+          font-size: 22px;
+          font-weight: 800;
+          font-family: 'Nunito', sans-serif;
+          margin: 0;
+        `
+        leftEl.appendChild(nameEl)
+
+        if (period) {
+          const periodEl = doc.createElement('p')
+          periodEl.textContent = period
+          periodEl.style.cssText = `
+            color: rgba(255,255,255,0.65);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Nunito', sans-serif;
+            margin: 0;
+          `
+          leftEl.appendChild(periodEl)
+        }
+
+        // Direita: logo em branco
+        const logoEl = doc.createElement('img')
+        logoEl.src = logoDataUrl
+        logoEl.style.cssText = `
+          height: 36px;
+          object-fit: contain;
+          display: block;
+        `
+
+        header.appendChild(leftEl)
+        header.appendChild(logoEl)
+
+        // Injeta no topo do conteúdo clonado
+        const contentEl = doc.querySelector('.dashboard-content')
+        if (contentEl) contentEl.insertBefore(header, contentEl.firstChild)
+      },
+    })
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.97)
+
+    // Página única: largura A4 landscape, altura proporcional ao conteúdo
+    const pdfWidth  = 297
+    const pdfHeight = (canvas.height / canvas.width) * pdfWidth
+
+    const pdf = new jsPDF({ unit: 'mm', format: [pdfWidth, pdfHeight] })
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight)
+    pdf.save(`${dashName}.pdf`)
+
+  } catch (err) {
+    console.error('[exportPdf]', err)
+  } finally {
+    exportingPdf.value = false
+  }
 }
 
 function formatInterval(seconds) {
@@ -1349,5 +1549,27 @@ onBeforeUnmount(() => {
     right: auto;
     left: 0;
   }
+}
+
+/* ── Beta badge no botão PDF ── */
+.pdf-btn-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.pdf-beta-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--color-btn-bg);
+  color: var(--color-btn-text);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  pointer-events: none;
+  line-height: 1.6;
 }
 </style>

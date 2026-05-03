@@ -1,0 +1,4 @@
+- Passar token via parametro na url - deve funcionar para autenticação como usuario
+- botão para admins apenas para configurar uma url que sera usada em televisoes para gestão avista, aonde ajusta os filtro, vai abri fullscreem, tambem gera um token junto na rota 
+- criar tabela tokens gerados
+- Criar sistema de negativação de tokens
