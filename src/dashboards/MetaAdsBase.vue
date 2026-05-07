@@ -529,9 +529,15 @@ const resolveImage = async (permalinkUrl) => {
       body:    JSON.stringify({ url: permalinkUrl }),
     })
     const data = await res.json()
-    // Aceita { url: '...' } ou string direta
-    const cdnUrl = typeof data === 'string' ? data : (data?.url || data?.imageUrl || '')
-    resolvedImages[permalinkUrl] = cdnUrl || 'error'
+
+    // Usa exclusivamente o campo base64 retornado pela rota imageFace
+    const b64Raw = data?.base64 ?? null
+    if (b64Raw) {
+      const imgSrc = b64Raw.startsWith('data:') ? b64Raw : `data:image/jpeg;base64,${b64Raw}`
+      resolvedImages[permalinkUrl] = imgSrc
+    } else {
+      resolvedImages[permalinkUrl] = 'error'
+    }
   } catch {
     resolvedImages[permalinkUrl] = 'error'
   } finally {

@@ -35,7 +35,7 @@
               </button>
 
               <button
-                class="btn btn-secondary btn-sm"
+                class="btn btn-secondary btn-sm hide-on-mobile"
                 @click="showRefreshModal = true"
                 :class="{ 'btn-active-refresh': dashboardStore.autoRefresh.enabled }"
                 data-tooltip="Auto-refresh"
@@ -47,10 +47,10 @@
             </div>
 
             <!-- Divisor -->
-            <div class="action-divider"></div>
+            <div class="action-divider hide-on-mobile"></div>
 
             <!-- Grupo: Visualização -->
-            <div class="action-group">
+            <div class="action-group hide-on-mobile">
               <button
                 class="btn btn-secondary btn-icon"
                 @click="toggleFullscreen"
@@ -94,19 +94,23 @@
                 </button>
                 <transition name="dropdown">
                   <div v-if="adminMenuOpen" class="admin-dropdown-menu" @click="adminMenuOpen = false">
-                    <button class="admin-menu-item" @click="openEditDash">
-                      <i class="bi bi-pencil-square"></i><span>Editar dashboard</span>
-                    </button>
-                    <button class="admin-menu-item" @click="showFontsPanel = true">
-                      <i class="bi bi-database-gear"></i><span>Gerenciar fontes</span>
-                    </button>
+                    <template v-if="authStore.isSuper">
+                      <button class="admin-menu-item" @click="openEditDash">
+                        <i class="bi bi-pencil-square"></i><span>Editar dashboard</span>
+                      </button>
+                      <button class="admin-menu-item" @click="showFontsPanel = true">
+                        <i class="bi bi-database-gear"></i><span>Gerenciar fontes</span>
+                      </button>
+                    </template>
                     <button class="admin-menu-item" @click="openPermissions">
                       <i class="bi bi-shield-lock"></i><span>Permissões de acesso</span>
                     </button>
-                    <div class="admin-menu-divider"></div>
-                    <button class="admin-menu-item danger" @click="showDeleteDash = true">
-                      <i class="bi bi-trash3"></i><span>Excluir dashboard</span>
-                    </button>
+                    <template v-if="authStore.isSuper">
+                      <div class="admin-menu-divider"></div>
+                      <button class="admin-menu-item danger" @click="showDeleteDash = true">
+                        <i class="bi bi-trash3"></i><span>Excluir dashboard</span>
+                      </button>
+                    </template>
                   </div>
                 </transition>
               </div>
@@ -119,7 +123,7 @@
       <div class="filters-collapsible" :class="{ expanded: filtersExpanded }">
         <div class="filters-collapsible-inner">
           <!-- Date presets -->
-          <div class="date-presets">
+          <div class="date-presets-desktop">
             <button
               v-for="preset in datePresets"
               :key="preset.value"
@@ -129,6 +133,18 @@
             >
               {{ preset.label }}
             </button>
+          </div>
+          <div class="date-presets-mobile">
+            <select
+              class="form-select filter-preset-select"
+              :value="dashboardStore.activeDatePreset || ''"
+              @change="applyPreset($event.target.value)"
+            >
+              <option value="" disabled>Personalizado</option>
+              <option v-for="preset in datePresets" :key="preset.value" :value="preset.value">
+                {{ preset.label }}
+              </option>
+            </select>
           </div>
 
           <!-- Date inputs -->
@@ -140,15 +156,6 @@
             <div class="filter-input-group">
               <label class="filter-label">Fim</label>
               <input type="date" v-model="dashboardStore.filters.endDate" class="form-input filter-date" @change="onFilterChange" />
-            </div>
-            <div class="filter-separator"><i class="bi bi-arrow-left-right"></i></div>
-            <div class="filter-input-group">
-              <label class="filter-label">Comp. início</label>
-              <input type="date" v-model="dashboardStore.filters.compareStartDate" class="form-input filter-date" @change="onFilterChange" />
-            </div>
-            <div class="filter-input-group">
-              <label class="filter-label">Comp. fim</label>
-              <input type="date" v-model="dashboardStore.filters.compareEndDate" class="form-input filter-date" @change="onFilterChange" />
             </div>
           </div>
         </div>
@@ -746,7 +753,13 @@ function applyUrlParams() {
   if (q.endDate) dashboardStore.filters.endDate = q.endDate
   if (q.compareStartDate) dashboardStore.filters.compareStartDate = q.compareStartDate
   if (q.compareEndDate) dashboardStore.filters.compareEndDate = q.compareEndDate
-  if (q.preset) dashboardStore.setDatePreset(q.preset)
+  
+  if (q.preset) {
+    dashboardStore.setDatePreset(q.preset)
+  } else if (q.startDate || q.endDate) {
+    dashboardStore.activeDatePreset = null
+  }
+
   if (q.refresh) dashboardStore.startAutoRefresh(parseInt(q.refresh))
   if (q.fullscreen === 'true') dashboardStore.isFullscreen = true
 }
@@ -845,25 +858,57 @@ async function exportPdf() {
       img.src = '/logo.png'
     })
 
+    // Aguarda todas as imagens do DOM carregarem antes de capturar
+    // (imagens base64 carregam muito rápido mas a reatividade do Vue
+    //  pode ainda não ter atualizado o <img src> no DOM)
+    const domImgs = [...element.querySelectorAll('img')]
+    await Promise.all(domImgs.map(img =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise(resolve => {
+            img.onload  = resolve
+            img.onerror = resolve
+            setTimeout(resolve, 5000) // timeout máximo de 5s por imagem
+          })
+    ))
+
     const canvas = await html2canvas(element, {
       scale:       1.5,
-      useCORS:     true,
+      useCORS:     false, // Desnecessário: imagens agora são data URLs (same-origin)
       logging:     false,
       windowWidth: 1600,
+      scrollX:     0,
+      scrollY:     0,
       onclone: (doc) => {
         // ── Injeta overrides com !important ─────────────────────────────
         // Inline styles individuais não sobrescrevem estilos Vue com data-v-*
         // Uma <style> com !important garante prioridade sobre tudo
         const fix = doc.createElement('style')
         fix.textContent = `
-          /* Fix 1: letter-spacing é a principal causa de texto deslocado no html2canvas */
-          * { letter-spacing: 0 !important; box-sizing: border-box !important; }
+          /* Fix 1: font-rendering e kerning para evitar texto deslocado (baixo/direita) */
+          * { 
+            letter-spacing: normal !important; /* Voltar para normal, forçar 0 pode encolher o texto e causar shift visual */
+            box-sizing: border-box !important; 
+            text-rendering: geometricPrecision !important;
+            font-kerning: none !important;
+            font-variant-ligatures: none !important;
+          }
 
-          /* Fix 2: inline-flex nos badges faz o texto sair da posição */
+          /* Fix 2: flexbox e line-height altos deslocam o texto dentro de badges no html2canvas. 
+             A solução mais estável é usar line-height: 1 e padding simétrico. */
           .badge, .pct-chip, .type-chip, .chip {
             display: inline-block !important;
-            line-height: 1.8 !important;
-            vertical-align: middle !important;
+            line-height: 1 !important;
+            height: auto !important;
+            padding: 5px 8px !important;
+            text-align: center !important;
+            vertical-align: baseline !important;
+            overflow: visible !important;
+          }
+          
+          .result-type-label {
+            line-height: 1 !important;
+            display: block !important;
           }
 
           /* Fix 3: text-overflow ellipsis + overflow hidden desloca texto */
@@ -997,8 +1042,8 @@ watch(
 )
 
 onMounted(async () => {
-  // Default to current month if no dates set
-  if (!dashboardStore.filters.startDate) {
+  // Default to current month if no dates set in store or URL
+  if (!dashboardStore.filters.startDate && !route.query.startDate) {
     dashboardStore.setDatePreset('currentMonth')
   }
   await loadDashboard()
@@ -1017,10 +1062,17 @@ onBeforeUnmount(() => {
 }
 
 /* ---- Filters bar ---- */
+/* Tooltip: forçar para baixo nos botões do header */
+.filters-bar [data-tooltip]::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+}
+
 .filters-bar {
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-card-border);
-  padding: 10px 24px;
+  padding: 24px 24px 10px 24px;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -1073,10 +1125,14 @@ onBeforeUnmount(() => {
   font-size: 20px;
 }
 
-.date-presets {
+.date-presets-desktop {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.date-presets-mobile {
+  display: none;
 }
 
 .filters-inputs {
@@ -1472,14 +1528,14 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   /* Filters bar: só uma linha no mobile */
   .filters-bar {
-    padding: 8px 14px;
+    padding: 12px 12px 8px 12px;
     top: 62px;
   }
 
-  /* Toprow: título + botão filtro + ações */
+  /* Toprow: título + botão filtro + ações em linha com scroll */
   .filters-toprow {
     flex-wrap: nowrap;
-    gap: 8px;
+    gap: 6px;
   }
 
   .filters-dashboard-title {
@@ -1492,7 +1548,30 @@ onBeforeUnmount(() => {
   }
 
   /* Botão funnel aparece no mobile */
-  .filters-toggle-btn { display: flex; }
+  .filters-toggle-btn { 
+    display: flex;
+  }
+
+  /* Esconder chevron do botão admin e labels */
+  .admin-chevron { display: none; }
+
+  /* Esconder itens específicos no mobile */
+  .hide-on-mobile { display: none !important; }
+
+  /* Ações: compactar sem overflow que corta dropdown */
+  .filters-toprow-right {
+    flex-shrink: 0;
+    gap: 4px;
+  }
+
+  /* Grupos de ação: sem shrink */
+  .action-group { flex-shrink: 0; }
+
+  /* Rótulos de texto nos botões: esconder */
+  .action-group-label { display: none; }
+
+  /* Divisores entre grupos: mais compactos */
+  .action-divider { margin: 0 2px; }
 
   /* Filtros: colapsados por padrão no mobile */
   .filters-collapsible {
@@ -1514,20 +1593,32 @@ onBeforeUnmount(() => {
     gap: 8px;
   }
 
-  /* Presets scroll horizontal */
-  .date-presets {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
+  /* Presets: esconder chips e mostrar select */
+  .date-presets-desktop { display: none; }
+  .date-presets-mobile {
+    display: block;
+    width: 100%;
   }
-  .date-presets::-webkit-scrollbar { display: none; }
 
-  .filter-date { width: 120px; }
+  .filters-inputs {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .filter-input-group {
+    flex: 1;
+  }
 
-  .action-group-label { display: none; }
+  .filter-date { width: 100%; }
 
   /* Content padding reduzido */
   .dashboard-content { padding: 14px; }
+
+  /* Admin dropdown: abre para a esquerda para não sair da tela */
+  .admin-dropdown-menu {
+    right: 0;
+    left: auto;
+  }
 
   /* Modals full width */
   .modal {
@@ -1543,12 +1634,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 480px) {
-  .filters-toprow-right { gap: 6px; }
-
-  .admin-dropdown-menu {
-    right: auto;
-    left: 0;
-  }
+  .filters-toprow-right { gap: 4px; }
 }
 
 /* ── Beta badge no botão PDF ── */

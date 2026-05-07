@@ -1,11 +1,18 @@
 /* ============================================
-   NexusHub - Global Styles
+   NexusHub — Global Styles & Design Tokens
+   ============================================
+   Este arquivo é a ÚNICA fonte de verdade para
+   o sistema de design do projeto.
+
+   ▸ Cores, fontes, sombras e bordas → bloco :root abaixo
+   ▸ NÃO hardcode valores nos componentes .vue
+   ▸ Sempre use var(--nome-da-variavel)
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
-/* ---- CSS Variables (derived from theme.js) ---- */
+/* ---- Design Tokens ---- */
 :root {
   --color-bg: #ffffff;
   --color-text: #313131;
@@ -354,6 +361,8 @@ img {
   padding: 28px;
   width: 100%;
   max-width: 480px;
+  max-height: 85dvh;
+  overflow-y: auto;
   box-shadow: var(--shadow-modal);
   animation: slideUp var(--transition-normal);
 }
