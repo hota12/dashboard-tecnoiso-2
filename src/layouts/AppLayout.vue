@@ -89,7 +89,7 @@
         </div>
 
         <!-- Admin section: visível apenas para admin/super -->
-        <div v-if="authStore.isSuper" class="nav-section">
+        <div v-if="authStore.isAdmin" class="nav-section">
           <p v-if="!sidebarCollapsed" class="nav-section-title">Administração</p>
           <router-link
             to="/users"
