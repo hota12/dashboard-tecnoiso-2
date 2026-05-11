@@ -314,7 +314,7 @@
           
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <a
-              href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20falar%20com%20o%20suporte%20t%C3%A9cnico."
+              href="http://wa.me/5547999615273?text=Ol%C3%A1%2C%20preciso%20falar%20com%20o%20suporte%20t%C3%A9cnico."
               target="_blank"
               class="btn btn-primary"
               style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; background: #25D366; color: #fff; border: none; font-weight: bold;"
@@ -322,7 +322,7 @@
               <i class="bi bi-whatsapp" style="margin-right: 8px; font-size: 18px;"></i> Suporte Técnico
             </a>
             <a
-              href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20falar%20com%20o%20suporte%20financeiro."
+              href="http://wa.me/554791966565?text=Ol%C3%A1%2C%20preciso%20falar%20com%20o%20suporte%20financeiro."
               target="_blank"
               class="btn btn-primary"
               style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; background: #25D366; color: #fff; border: none; font-weight: bold;"
