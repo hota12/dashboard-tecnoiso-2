@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const API_BASE_URL = 'https://nexus-n8n.2wdiso.easypanel.host/a/'
+export const API_BASE_URL = 'https://domador-n8n.2wdiso.easypanel.host/webhook/'
 
 const api = axios.create({
   baseURL: API_BASE_URL,

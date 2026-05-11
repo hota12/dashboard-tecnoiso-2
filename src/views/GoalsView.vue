@@ -20,12 +20,16 @@
     </div>
 
     <!-- Alerts -->
-    <div v-if="successMessage" class="alert alert-success mb-4">
-      <i class="bi bi-check-circle-fill"></i> {{ successMessage }}
-    </div>
-    <div v-if="goalsStore.error" class="alert alert-danger mb-4">
-      <i class="bi bi-exclamation-circle-fill"></i> {{ goalsStore.error }}
-    </div>
+    <transition name="toast-slide">
+      <div v-if="successMessage" class="fixed-toast alert alert-success">
+        <i class="bi bi-check-circle-fill"></i> {{ successMessage }}
+      </div>
+    </transition>
+    <transition name="toast-slide">
+      <div v-if="goalsStore.error" class="fixed-toast alert alert-danger">
+        <i class="bi bi-exclamation-circle-fill"></i> {{ goalsStore.error }}
+      </div>
+    </transition>
 
     <!-- Loading -->
     <div v-if="loading" class="users-skeletons">
@@ -210,6 +214,22 @@ onMounted(async () => {
 .mb-4 {
   margin-bottom: 16px;
 }
+
+/* Toast fixed */
+.fixed-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  min-width: 250px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin-bottom: 0;
+}
+.toast-slide-enter-active, .toast-slide-leave-active { 
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+}
+.toast-slide-enter-from { opacity: 0; transform: translateX(50px); }
+.toast-slide-leave-to { opacity: 0; transform: translateX(50px); }
 
 /* Year navigator */
 .year-navigator {

@@ -135,10 +135,31 @@
           </div>
 
           <form @submit.prevent="saveUser">
+            <!-- Toggle Goalfy -->
+            <div class="goalfy-toggle-container">
+              <div class="goalfy-toggle-info">
+                <i class="bi bi-box-arrow-in-down-right" style="color:var(--color-btn-bg);font-size:18px;"></i>
+                <div>
+                  <p class="font-semibold" style="font-size:13px">Importar dados da Goalfy</p>
+                  <p class="text-xs text-muted">Preenche o nome e associa o ID de referência automaticamente</p>
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" v-model="useGoalfy">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
             <div class="form-grid">
-              <div class="form-group">
+              <div class="form-group" style="position: relative;">
                 <label class="form-label">Nome completo *</label>
-                <input v-model="form.name" type="text" class="form-input" placeholder="Nome do usuário" required />
+                <input v-model="form.name" type="text" class="form-input" :placeholder="useGoalfy ? 'Busque um usuário Goalfy...' : 'Nome do usuário'" required @focus="showGoalfyDropdown = true" @blur="hideGoalfyDropdown" />
+                
+                <div v-if="useGoalfy && showGoalfyDropdown && goalfyUsersFiltered.length" class="autocomplete-dropdown">
+                  <div v-for="gu in goalfyUsersFiltered" :key="gu.id" class="autocomplete-item" @mousedown="selectGoalfyUser(gu)">
+                    {{ gu.name }}
+                  </div>
+                </div>
               </div>
               <div class="form-group" v-if="!modal.editing">
                 <label class="form-label">Login *</label>
@@ -262,6 +283,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useUsersStore } from '@/stores/users'
+import api from '@/config/api'
 
 const usersStore = useUsersStore()
 
@@ -330,17 +352,53 @@ const modal = reactive({ show: false, editing: null, error: '' })
 const form = ref({ name: '', userName: '', password: '', role: '', referenceId: '' })
 const showPwd = ref(false)
 const saving = ref(false)
+const useGoalfy = ref(false)
 
 function openCreate() {
   modal.editing = null; modal.error = ''; modal.show = true
   form.value = { name: '', userName: '', password: '', role: '', referenceId: '' }
   showPwd.value = false
+  useGoalfy.value = false
 }
 function openEdit(user) {
   modal.editing = user; modal.error = ''; modal.show = true
   form.value = { name: user.name, userName: user.userName, password: '', role: user.roles, referenceId: user.referenceId || '' }
+  useGoalfy.value = false
 }
-function closeModal() { modal.show = false; modal.editing = null }
+function closeModal() { modal.show = false; modal.editing = null; showGoalfyDropdown.value = false }
+
+// ---- Autocomplete Goalfy Users ----
+const goalfyUsers = ref([])
+const showGoalfyDropdown = ref(false)
+
+async function fetchGoalfyUsers() {
+  try {
+    const res = await api.get('/goalfy/users')
+    if (Array.isArray(res.data)) {
+      goalfyUsers.value = res.data
+    } else if (res.data && Array.isArray(res.data.users)) {
+      goalfyUsers.value = res.data.users
+    }
+  } catch (err) {
+    console.error('Erro ao buscar usuários do Goalfy', err)
+  }
+}
+
+const goalfyUsersFiltered = computed(() => {
+  if (!form.value.name) return goalfyUsers.value.slice(0, 8)
+  const q = form.value.name.toLowerCase()
+  return goalfyUsers.value.filter(u => u.name.toLowerCase().includes(q)).slice(0, 8)
+})
+
+function hideGoalfyDropdown() {
+  setTimeout(() => { showGoalfyDropdown.value = false }, 150)
+}
+
+function selectGoalfyUser(u) {
+  form.value.name = u.name
+  form.value.referenceId = u.id
+  showGoalfyDropdown.value = false
+}
 
 async function saveUser() {
   saving.value = true; modal.error = ''
@@ -387,7 +445,10 @@ async function doDelete() {
   finally { saving.value = false }
 }
 
-onMounted(() => usersStore.fetchUsers())
+onMounted(() => {
+  usersStore.fetchUsers()
+  fetchGoalfyUsers()
+})
 </script>
 
 <style scoped>
@@ -440,4 +501,49 @@ onMounted(() => usersStore.fetchUsers())
 
 .pwd-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-placeholder); display: flex; align-items: center; padding: 4px; border-radius: var(--radius-sm); transition: color var(--transition-fast); }
 .pwd-toggle:hover { color: var(--color-text); }
+
+/* Autocomplete Goalfy */
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: var(--shadow-modal);
+  padding: 4px 0;
+}
+.autocomplete-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.autocomplete-item:hover {
+  background: rgba(216,139,73,0.1);
+  color: var(--color-btn-bg);
+}
+
+/* Toggle Switch / Goalfy */
+.goalfy-toggle-container {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(216,139,73,0.06);
+  border: 1px solid rgba(216,139,73,0.15);
+  padding: 12px 16px; border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+.goalfy-toggle-info { display: flex; align-items: center; gap: 12px; }
+
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: var(--color-btn-bg); }
+input:checked + .slider:before { transform: translateX(20px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
 </style>

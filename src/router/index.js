@@ -9,6 +9,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/generate-users',
+    name: 'GenerateUsers',
+    component: () => import('@/views/GenerateUsers.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/',
     component: () => import('@/layouts/AppLayout.vue'),
     meta: { requiresAuth: true },

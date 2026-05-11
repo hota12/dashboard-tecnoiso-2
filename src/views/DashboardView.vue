@@ -972,7 +972,7 @@ async function exportPdf() {
           color: ${sidebarTxt};
           font-size: 22px;
           font-weight: 800;
-          font-family: 'Nunito', sans-serif;
+          font-family: 'Red Hat Text', 'Anek Devanagari', sans-serif;
           margin: 0;
         `
         leftEl.appendChild(nameEl)
@@ -984,7 +984,7 @@ async function exportPdf() {
             color: rgba(255,255,255,0.65);
             font-size: 13px;
             font-weight: 600;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Red Hat Text', 'Anek Devanagari', sans-serif;
             margin: 0;
           `
           leftEl.appendChild(periodEl)

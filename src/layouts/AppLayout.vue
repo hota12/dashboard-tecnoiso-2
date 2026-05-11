@@ -103,7 +103,7 @@
         </div>
 
         <!-- Goals -->
-        <div class="nav-section">
+        <div v-if="authStore.isAdmin" class="nav-section">
           <p v-if="!sidebarCollapsed" class="nav-section-title">Metas</p>
           <router-link
             to="/goals"
