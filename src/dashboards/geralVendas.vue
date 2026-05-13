@@ -382,12 +382,16 @@ function formatDateLabel(iso) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
+// Parseia 'YYYY-MM-DD' sem problema de timezone (UTC vs local)
+function parseLocalDate(str) {
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 function allDaysInRange(startIso, endIso) {
   const days = []
-  const cursor = new Date(startIso)
-  cursor.setHours(0, 0, 0, 0)
-  const end = new Date(endIso)
-  end.setHours(23, 59, 59, 999)
+  const cursor = parseLocalDate(startIso)
+  const end = parseLocalDate(endIso)
   while (cursor <= end) {
     days.push(cursor.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }))
     cursor.setDate(cursor.getDate() + 1)
@@ -423,8 +427,8 @@ function buildAccSeries(leads, dateField, valueField = null) {
 // ─── Metas Proporcional ────────────────────────────────────────
 const metaDataSeries = computed(() => {
   if (!props.filters.startDate || !props.filters.endDate) return []
-  const start = new Date(props.filters.startDate)
-  const end   = new Date(props.filters.endDate)
+  const start = parseLocalDate(props.filters.startDate)
+  const end   = parseLocalDate(props.filters.endDate)
   if (isNaN(start) || isNaN(end)) return []
 
   // Pega todos os referenceIds do período
@@ -445,8 +449,6 @@ const metaDataSeries = computed(() => {
   const monthGoalCache = {}
   let accArray = []
   let totalMeta = 0
-  start.setHours(0, 0, 0, 0)
-  end.setHours(0, 0, 0, 0)
   let current = new Date(start)
 
   while (current <= end) {

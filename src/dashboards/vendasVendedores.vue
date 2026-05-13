@@ -788,22 +788,26 @@ const rankingVendedores = computed(() => {
   }))
 })
 
+// ─── Utilitário: parseia 'YYYY-MM-DD' sem problema de timezone ─
+function parseLocalDate(str) {
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 // ─── Meta do Período Proporcional ──────────────────────────────
 const daysInPeriod = computed(() => {
   if (!props.filters.startDate || !props.filters.endDate) return 0
-  const start = new Date(props.filters.startDate)
-  const end = new Date(props.filters.endDate)
+  const start = parseLocalDate(props.filters.startDate)
+  const end = parseLocalDate(props.filters.endDate)
   if (isNaN(start) || isNaN(end)) return 0
-  start.setHours(0,0,0,0)
-  end.setHours(0,0,0,0)
   return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1
 })
 
 const metaDataSeries = computed(() => {
   if (!props.filters.startDate || !props.filters.endDate) return []
 
-  const start = new Date(props.filters.startDate)
-  const end = new Date(props.filters.endDate)
+  const start = parseLocalDate(props.filters.startDate)
+  const end = parseLocalDate(props.filters.endDate)
   
   if (isNaN(start) || isNaN(end)) return []
 
@@ -828,9 +832,6 @@ const metaDataSeries = computed(() => {
 
   let accArray = []
   let totalMeta = 0
-  
-  start.setHours(0,0,0,0)
-  end.setHours(0,0,0,0)
   let current = new Date(start)
   
   // Cache para não buscar e calcular a meta do mês várias vezes
@@ -928,10 +929,8 @@ function formatDateLabel(iso) {
 
 function allDaysInRange(startIso, endIso) {
   const days = []
-  const cursor = new Date(startIso)
-  cursor.setHours(0, 0, 0, 0)
-  const end = new Date(endIso)
-  end.setHours(23, 59, 59, 999)
+  const cursor = parseLocalDate(startIso)
+  const end = parseLocalDate(endIso)
   while (cursor <= end) {
     days.push(cursor.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }))
     cursor.setDate(cursor.getDate() + 1)
