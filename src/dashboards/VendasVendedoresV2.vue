@@ -255,28 +255,6 @@
             <span class="badge-pill badge-orange">{{ kpis.andamento }} em aberto</span>
           </div>
           <div class="andamento-detalhe-grid">
-            <!-- Em Contato -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(66,165,245,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(66,165,245,0.12);color:#42a5f5;">
-                <i class="bi bi-chat-dots"></i>
-              </div>
-              <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Em Contato</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.contato.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.contato.valor) }}</span>
-              </div>
-            </div>
-            <!-- Orçamento -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(255,167,38,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(255,167,38,0.12);color:#ffa726;">
-                <i class="bi bi-file-earmark-text"></i>
-              </div>
-              <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Em Orçamento</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.orcamento.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.orcamento.valor) }}</span>
-              </div>
-            </div>
             <!-- Follow-up -->
             <div class="andamento-detalhe-item" style="border-color:rgba(251,140,0,0.35);">
               <div class="andamento-detalhe-icon" style="background:rgba(251,140,0,0.12);color:#fb8c00;">
@@ -288,15 +266,48 @@
                 <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.followup.valor) }}</span>
               </div>
             </div>
-            <!-- Outros -->
-            <div v-if="andamentoDetalhe.outros.count" class="andamento-detalhe-item" style="border-color:rgba(120,144,156,0.3);">
-              <div class="andamento-detalhe-icon" style="background:rgba(120,144,156,0.1);color:#78909c;">
-                <i class="bi bi-three-dots"></i>
+            <!-- Orçamento -->
+            <div class="andamento-detalhe-item" style="border-color:rgba(255,167,38,0.35);">
+              <div class="andamento-detalhe-icon" style="background:rgba(255,167,38,0.12);color:#ffa726;">
+                <i class="bi bi-file-earmark-text"></i>
               </div>
               <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Outras Fases</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.outros.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.outros.valor) }}</span>
+                <span class="andamento-detalhe-label">Orçamento</span>
+                <span class="andamento-detalhe-value">{{ andamentoDetalhe.orcamento.count }}</span>
+                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.orcamento.valor) }}</span>
+              </div>
+            </div>
+            <!-- Reativação -->
+            <div class="andamento-detalhe-item" style="border-color:rgba(206,147,216,0.35);">
+              <div class="andamento-detalhe-icon" style="background:rgba(206,147,216,0.12);color:#ce93d8;">
+                <i class="bi bi-arrow-repeat"></i>
+              </div>
+              <div class="andamento-detalhe-body">
+                <span class="andamento-detalhe-label">Reativação</span>
+                <span class="andamento-detalhe-value">{{ andamentoDetalhe.reativacao.count }}</span>
+                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.reativacao.valor) }}</span>
+              </div>
+            </div>
+            <!-- Em Contato -->
+            <div class="andamento-detalhe-item" style="border-color:rgba(66,165,245,0.35);">
+              <div class="andamento-detalhe-icon" style="background:rgba(66,165,245,0.12);color:#42a5f5;">
+                <i class="bi bi-chat-dots"></i>
+              </div>
+              <div class="andamento-detalhe-body">
+                <span class="andamento-detalhe-label">Em Contato</span>
+                <span class="andamento-detalhe-value">{{ andamentoDetalhe.contato.count }}</span>
+                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.contato.valor) }}</span>
+              </div>
+            </div>
+            <!-- Fila -->
+            <div class="andamento-detalhe-item" style="border-color:rgba(144,202,249,0.35);">
+              <div class="andamento-detalhe-icon" style="background:rgba(144,202,249,0.12);color:#90caf9;">
+                <i class="bi bi-person-lines-fill"></i>
+              </div>
+              <div class="andamento-detalhe-body">
+                <span class="andamento-detalhe-label">Fila</span>
+                <span class="andamento-detalhe-value">{{ andamentoDetalhe.fila.count }}</span>
+                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.fila.valor) }}</span>
               </div>
             </div>
           </div>
@@ -769,25 +780,29 @@ const kpis = computed(() => {
 // Detalhamento dos negócios em aberto por fase
 const andamentoDetalhe = computed(() => {
   const result = {
-    contato:    { count: 0, valor: 0 },
-    orcamento:  { count: 0, valor: 0 },
     followup:   { count: 0, valor: 0 },
-    outros:     { count: 0, valor: 0 },
+    orcamento:  { count: 0, valor: 0 },
+    reativacao: { count: 0, valor: 0 },
+    contato:    { count: 0, valor: 0 },
+    fila:       { count: 0, valor: 0 },
   }
   filtered.value.negociosAndamento.forEach(l => {
     const val = Number(l.valorOrcamento) || 0
-    if (l.faseAtual === 'EM CONTATO') {
-      result.contato.count++
-      result.contato.valor += val
+    if (l.faseAtual === 'FOLLOW-UP DE ORÇAMENTO') {
+      result.followup.count++
+      result.followup.valor += val
     } else if (l.faseAtual === 'ORÇAMENTO') {
       result.orcamento.count++
       result.orcamento.valor += val
-    } else if (l.faseAtual === 'FOLLOW-UP DE ORÇAMENTO') {
-      result.followup.count++
-      result.followup.valor += val
-    } else {
-      result.outros.count++
-      result.outros.valor += val
+    } else if (l.faseAtual === 'REATIVAÇÃO') {
+      result.reativacao.count++
+      result.reativacao.valor += val
+    } else if (l.faseAtual === 'EM CONTATO') {
+      result.contato.count++
+      result.contato.valor += val
+    } else if (l.faseAtual === 'FILA') {
+      result.fila.count++
+      result.fila.valor += val
     }
   })
   return result
