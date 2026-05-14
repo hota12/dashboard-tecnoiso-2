@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de HDs de Auditoria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Vanilla CSS - Design Premium Dark Mode (Glassmorphism) */
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: rgba(30, 41, 59, 0.7);
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --success-color: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            /* Fundo dinâmico elegante */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--accent-color);
+            opacity: 0.5;
+        }
+
+        .card.danger::before { background: var(--danger-color); }
+        .card.warning::before { background: var(--warning-color); }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card .value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .value.danger { color: var(--danger-color); }
+        .value.warning { color: var(--warning-color); }
+        .value.success { color: var(--success-color); }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .table-container {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            border-radius: 1rem;
+            overflow-x: auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .main-row {
+            transition: background-color 0.2s ease;
+        }
+
+        .main-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge.danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge.warning { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge.success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        .details-row {
+            display: none;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .details-row.open {
+            display: table-row;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .details-content {
+            padding: 1.5rem;
+        }
+
+        .auditor-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .auditor-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--surface-border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: transform 0.2s;
+        }
+        
+        .auditor-card:hover {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .auditor-info h4 { margin: 0; font-size: 1rem; color: #fff; }
+        .auditor-info p { margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-secondary); }
+        
+        .auditor-stats { 
+            display: flex; 
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--surface-border);
+            font-size: 0.85rem;
+        }
+
+        .auditor-stats span {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .auditor-stats strong {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        .hidden { display: none !important; }
+
+        .expand-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--surface-border);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .expand-btn:hover { 
+            background: var(--accent-color);
+            border-color: var(--accent-hover);
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <p style="color: var(--text-secondary); font-weight: 600;">Processando dados da certificadora...</p>
+    </div>
+
+    <div class="container hidden" id="app">
+        <header>
+            <h1>Análise de HDs de Auditoria</h1>
+            <p class="subtitle">Monitoramento de pagamentos e distribuição de horas por processo</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>Total de Processos</h3>
+                <p class="value" id="stat-total">0</p>
+            </div>
+            <div class="card danger">
+                <h3>Pagamento Excedente</h3>
+                <p class="value danger" id="stat-excedentes">0</p>
+            </div>
+            <div class="card warning">
+                <h3>Divergência de HD</h3>
+                <p class="value warning" id="stat-divergentes">0</p>
+            </div>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">Todos os Processos</button>
+            <button class="filter-btn" data-filter="excedentes">Excedentes (Pagamento > Total)</button>
+            <button class="filter-btn" data-filter="divergentes">Divergências (Soma Auditor != Total)</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Processo</th>
+                        <th>Data</th>
+                        <th>HD Planejado</th>
+                        <th>HD Auditores</th>
+                        <th>HD Pago</th>
+                        <th>Status</th>
+                        <th>Detalhes</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Registros injetados via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://api.cbgcertificadora.com.br/webhook/0a5d1062-aa9e-469f-95a4-da614b2ce299';
+        let allData = [];
+        let currentFilter = 'all';
+
+        async function init() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const rawData = await response.json();
+                
+                processData(rawData);
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                
+                setupEventListeners();
+                renderTable();
+                updateStats();
+            } catch (error) {
+                console.error("Erro ao buscar dados:", error);
+                document.getElementById('loading').innerHTML = `
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--danger-color)" stroke-width="2" style="margin-bottom: 1rem;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <p style="color: var(--danger-color); font-weight: bold; text-align:center;">
+                        Erro ao carregar os dados.<br>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: normal;">Verifique o console para mais detalhes.</span>
+                    </p>
+                `;
+            }
+        }
+
+        function processData(data) {
+            const auditsMap = {};
+
+            data.forEach(item => {
+                // REGRA DE NEGÓCIO: Processo único = numeroProcesso + dataAuditoria
+                const dataAuditoria = item.dataAuditoria || 'N/A';
+                const idUnico = `${item.numeroProcesso}_${dataAuditoria}`;
+
+                if (!auditsMap[idUnico]) {
+                    auditsMap[idUnico] = {
+                        idUnico,
+                        idZeev: item.idZeev || 'N/A',
+                        numeroProcesso: item.numeroProcesso,
+                        dataAuditoria: dataAuditoria,
+                        hdTotal: Number(item.hdTotal) || 0,
+                        somaHdAuditor: 0,
+                        somaHdPago: 0,
+                        auditores: []
+                    };
+                }
+
+                // Acumuladores
+                auditsMap[idUnico].somaHdAuditor += Number(item.hdAuditor) || 0;
+                
+                // REGRA DE NEGÓCIO: Só acumula o "HD Pago" se houver valor financeiro pago
+                if (Number(item.valorPago) > 0) {
+                    auditsMap[idUnico].somaHdPago += Number(item.hdPago) || 0;
+                }
+                
+                auditsMap[idUnico].auditores.push(item);
+            });
+
+            // Converter para array e aplicar as validações
+            allData = Object.values(auditsMap).map(audit => {
+                // Se pagamos a mais do que o planejado = ERRO CRÍTICO
+                const alertaPagamento = audit.somaHdPago > audit.hdTotal;
+                // Se a distribuição dos HDs para os auditores difere do total planejado = ALERTA
+                const alertaDistribuicao = audit.somaHdAuditor !== audit.hdTotal;
+                
+                return { ...audit, alertaPagamento, alertaDistribuicao };
+            });
+            
+            // Ordenação: Excedentes > Divergentes > OK
+            allData.sort((a, b) => {
+                if (a.alertaPagamento && !b.alertaPagamento) return -1;
+                if (!a.alertaPagamento && b.alertaPagamento) return 1;
+                if (a.alertaDistribuicao && !b.alertaDistribuicao) return -1;
+                if (!a.alertaDistribuicao && b.alertaDistribuicao) return 1;
+                return 0;
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').innerText = allData.length;
+            document.getElementById('stat-excedentes').innerText = allData.filter(d => d.alertaPagamento).length;
+            document.getElementById('stat-divergentes').innerText = allData.filter(d => d.alertaDistribuicao).length;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            const filteredData = allData.filter(item => {
+                if (currentFilter === 'excedentes') return item.alertaPagamento;
+                if (currentFilter === 'divergentes') return item.alertaDistribuicao;
+                return true;
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 4rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                            Nenhum registro encontrado para este filtro.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredData.forEach((audit, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'main-row';
+                
+                let badgeHtml = '';
+                if (audit.alertaPagamento) {
+                    badgeHtml = `<span class="badge danger">Pago Excedente</span>`;
+                } else if (audit.alertaDistribuicao) {
+                    badgeHtml = `<span class="badge warning">Divergência HD</span>`;
+                } else {
+                    badgeHtml = `<span class="badge success">Regular</span>`;
+                }
+
+                // Estilo condicional para colunas
+                const colorPago = audit.alertaPagamento ? 'var(--danger-color)' : 'inherit';
+                const colorAuditor = audit.alertaDistribuicao ? 'var(--warning-color)' : 'inherit';
+
+                tr.innerHTML = `
+                    <td style="font-weight: 600; font-size: 1.05rem;">
+                        ${audit.numeroProcesso}
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; margin-top: 0.2rem;">Zeev: ${audit.idZeev}</div>
+                    </td>
+                    <td style="color: var(--text-secondary);">${audit.dataAuditoria}</td>
+                    <td style="font-weight: 600;">${audit.hdTotal}</td>
+                    <td style="color: ${colorAuditor}; font-weight: ${audit.alertaDistribuicao ? 'bold' : 'normal'};">${audit.somaHdAuditor}</td>
+                    <td style="color: ${colorPago}; font-weight: ${audit.alertaPagamento ? 'bold' : 'normal'};">${audit.somaHdPago}</td>
+                    <td>${badgeHtml}</td>
+                    <td>
+                        <button class="expand-btn" onclick="toggleDetails('details-${index}')" title="Ver Auditores">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                // Row de Detalhes (Auditores)
+                const trDetails = document.createElement('tr');
+                trDetails.className = 'details-row';
+                trDetails.id = `details-${index}`;
+                
+                const auditoresHtml = audit.auditores.map(aud => {
+                    const temPagamento = Number(aud.valorPago) > 0;
+                    const hdPagoStr = temPagamento ? aud.hdPago : `<span style="text-decoration: line-through; opacity: 0.5;">${aud.hdPago}</span> <small style="font-size:0.65rem">(Valor 0)</small>`;
+                    
+                    return `
+                    <div class="auditor-card">
+                        <div class="auditor-info">
+                            <h4>${aud.nomeAuditor || 'Desconhecido'}</h4>
+                            <p>${aud.papel || 'Sem Papel'} <br> ${aud.emailAuditor || 'Sem Email'}</p>
+                        </div>
+                        <div class="auditor-stats">
+                            <span>
+                                <small style="color: var(--text-secondary)">HD Auditor</small>
+                                <strong>${aud.hdAuditor}</strong>
+                            </span>
+                            <span>
+                                <small style="color: var(--text-secondary)">HD Pago</small>
+                                <strong style="color: ${!temPagamento ? 'var(--text-secondary)' : (Number(aud.hdPago) > Number(aud.hdAuditor) ? 'var(--danger-color)' : 'var(--success-color)')}">${hdPagoStr}</strong>
+                            </span>
+                            <span style="text-align: right">
+                                <small style="color: var(--text-secondary)">Valor Pago</small>
+                                <strong style="color: ${temPagamento ? '#fff' : 'var(--danger-color)'}">R$ ${Number(aud.valorPago).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>
+                            </span>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                trDetails.innerHTML = `
+                    <td colspan="7" style="padding: 0;">
+                        <div class="details-content">
+                            <h4 style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                Auditores Vinculados
+                            </h4>
+                            <div class="auditor-list">
+                                ${auditoresHtml}
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(trDetails);
+            });
+        }
+
+        function toggleDetails(id) {
+            const row = document.getElementById(id);
+            if (row.classList.contains('open')) {
+                row.classList.remove('open');
+            } else {
+                // Opcional: fechar outros abertos
+                // document.querySelectorAll('.details-row.open').forEach(r => r.classList.remove('open'));
+                row.classList.add('open');
+            }
+        }
+
+        function setupEventListeners() {
+            const btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    btns.forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentFilter = e.target.dataset.filter;
+                    renderTable();
+                });
+            });
+        }
+
+        window.toggleDetails = toggleDetails;
+        init();
+    </script>
+</body>
+</html>

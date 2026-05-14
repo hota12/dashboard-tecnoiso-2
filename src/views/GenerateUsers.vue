@@ -25,17 +25,12 @@ import * as XLSX from 'xlsx'
 const usersStore = useUsersStore()
 
 const names = [
-  'Brayan Rocha',
-  'Daiane Alves',
-  'Daiane Avila',
-  'Douglas Foss',
-  'Eduardo',
-  'Eduardo Dias',
+  'Elisa',
+  'Gabrieli Lira',
   'Henrique Lorenzo',
-  'Janaina Rodrigues',
-  'Naira Canuto',
-  'Rafael Ferreira',
-  'Thierry'
+  'Luiz Gustavo',
+  'Maristela Silveira',
+  'Vanessa'
 ]
 
 const loading = ref(false)
