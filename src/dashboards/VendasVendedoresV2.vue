@@ -245,7 +245,7 @@
       <!-- ── Análises Inferiores (Grid) ────────────────────── -->
       <div class="bottom-analytics-grid">
 
-        <!-- ── Detalhamento Em Aberto ────────────────────────── -->
+        <!-- ── Detalhamento Em Aberto ─────────────────────────dd─ -->
         <div class="andamento-detalhe-card">
           <div class="section-header" style="margin-bottom:4px;">
             <span class="section-title">
@@ -266,15 +266,26 @@
                 <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.contato.valor) }}</span>
               </div>
             </div>
-            <!-- Orçamento e Follow-up -->
+            <!-- Orçamento -->
             <div class="andamento-detalhe-item" style="border-color:rgba(255,167,38,0.35);">
               <div class="andamento-detalhe-icon" style="background:rgba(255,167,38,0.12);color:#ffa726;">
                 <i class="bi bi-file-earmark-text"></i>
               </div>
               <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Orçamentos</span>
+                <span class="andamento-detalhe-label">Em Orçamento</span>
                 <span class="andamento-detalhe-value">{{ andamentoDetalhe.orcamento.count }}</span>
                 <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.orcamento.valor) }}</span>
+              </div>
+            </div>
+            <!-- Follow-up -->
+            <div class="andamento-detalhe-item" style="border-color:rgba(251,140,0,0.35);">
+              <div class="andamento-detalhe-icon" style="background:rgba(251,140,0,0.12);color:#fb8c00;">
+                <i class="bi bi-telephone-outbound"></i>
+              </div>
+              <div class="andamento-detalhe-body">
+                <span class="andamento-detalhe-label">Follow-up</span>
+                <span class="andamento-detalhe-value">{{ andamentoDetalhe.followup.count }}</span>
+                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.followup.valor) }}</span>
               </div>
             </div>
             <!-- Outros -->
@@ -760,6 +771,7 @@ const andamentoDetalhe = computed(() => {
   const result = {
     contato:    { count: 0, valor: 0 },
     orcamento:  { count: 0, valor: 0 },
+    followup:   { count: 0, valor: 0 },
     outros:     { count: 0, valor: 0 },
   }
   filtered.value.negociosAndamento.forEach(l => {
@@ -767,9 +779,12 @@ const andamentoDetalhe = computed(() => {
     if (l.faseAtual === 'EM CONTATO') {
       result.contato.count++
       result.contato.valor += val
-    } else if (l.faseAtual === 'ORÇAMENTO' || l.faseAtual === 'FOLLOW-UP DE ORÇAMENTO') {
+    } else if (l.faseAtual === 'ORÇAMENTO') {
       result.orcamento.count++
       result.orcamento.valor += val
+    } else if (l.faseAtual === 'FOLLOW-UP DE ORÇAMENTO') {
+      result.followup.count++
+      result.followup.valor += val
     } else {
       result.outros.count++
       result.outros.valor += val
