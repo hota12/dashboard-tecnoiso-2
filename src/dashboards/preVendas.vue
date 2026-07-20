@@ -561,7 +561,7 @@ const motivoPerdidos = computed(() => buildMotivo(data.value.leadsDesqualificado
 const distVendedor   = computed(() => buildFrequency(data.value.leadsGanhos, 'vendedorSorteado', 'Sem Vendedor'))
 const distClienteCasa = computed(() => buildFrequency(
   filterClienteCasa.value === 'novos' ? data.value.novosLeads : data.value.leadsGanhos,
-  'clienteDaCasa', 'Não é cliente da casa'
+  'clienteDaCasa', 'Não Informado'
 ))
 const distInteresse = computed(() => buildFrequency(
   filterInteresse.value === 'novos' ? data.value.novosLeads : data.value.leadsGanhos,
