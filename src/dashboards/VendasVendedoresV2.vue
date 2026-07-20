@@ -117,7 +117,7 @@
           <div class="kpi-body">
             <span class="kpi-label kpi-label-flex">
               Taxa de Conversão
-              <span class="tooltip-icon" data-tooltip="Ganhos ÷ (Ganhos + Perdidos) × 100">
+              <span class="tooltip-icon" data-tooltip="Ganhos ÷ Novos Negócios × 100">
                 <i class="bi bi-info-circle"></i>
               </span>
             </span>
@@ -745,11 +745,11 @@ const kpis = computed(() => {
 
   const ganhos   = negociosGanhos.length
   const perdidos = negociosPerdidos.length
-  const total    = ganhos + perdidos
+  const novos    = novosNegocios.length
 
   const valorTotal  = negociosGanhos.reduce((s, l) => s + (Number(l.valorPedido) || 0), 0)
   const ticketMedio = ganhos > 0 ? valorTotal / ganhos : 0
-  const taxa        = total > 0 ? ((ganhos / total) * 100).toFixed(1) + '%' : '—'
+  const taxa        = novos > 0 ? ((ganhos / novos) * 100).toFixed(1) + '%' : '—'
 
   const now = new Date().getTime()
   const andamentoAtrasados = negociosAndamento.filter(l => {
@@ -763,7 +763,7 @@ const kpis = computed(() => {
   const qtdPropostasGeradas = novasPropostas.length
 
   return {
-    novos:      novosNegocios.length,
+    novos,
     ganhos,
     perdidos,
     andamento:  negociosAndamento.length,
