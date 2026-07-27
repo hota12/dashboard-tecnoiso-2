@@ -852,30 +852,14 @@ function normalizeName(str) {
 }
 
 // Usuários do sistema correspondentes a um vendedor.
-// Casa por nome (fonte confiável: é o mesmo nome usado no cadastro) e,
-// como reforço, pelo referenceId quando o lead traz esse campo.
+// O casamento é feito pelo nome: o referenceId do lead não é confiável para
+// isso — em novasPropostas ele não acompanha o responsável (um mesmo vendedor
+// aparece com o referenceId de todos os outros), o que fazia a meta somar
+// todos os usuários independente do filtro.
 function usersForVendedor(vendedor) {
   const alvo = normalizeName(vendedor)
   if (!alvo) return []
-
-  const refIds = new Set(
-    [
-      ...allData.value.novosNegocios,
-      ...allData.value.negociosGanhos,
-      ...allData.value.negociosPerdidos,
-      ...allData.value.negociosAndamento,
-      ...allData.value.novasPropostas,
-      ...allData.value.negociosDesqualificados,
-    ]
-      .filter(l => l.responsavel === vendedor)
-      .map(l => l.referenceId)
-      .filter(Boolean)
-      .map(String)
-  )
-
-  return usersStore.users.filter(
-    u => normalizeName(u.name) === alvo || (u.referenceId && refIds.has(String(u.referenceId)))
-  )
+  return usersStore.users.filter(u => normalizeName(u.name) === alvo)
 }
 
 const metaDataSeries = computed(() => {
