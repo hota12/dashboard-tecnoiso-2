@@ -842,22 +842,49 @@ const daysInPeriod = computed(() => {
   return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1
 })
 
+// Normaliza nome para casar vendedor do CRM com usuário do sistema
+function normalizeName(str) {
+  return String(str ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+// Usuários do sistema correspondentes a um vendedor.
+// Casa por nome (fonte confiável: é o mesmo nome usado no cadastro) e,
+// como reforço, pelo referenceId quando o lead traz esse campo.
+function usersForVendedor(vendedor) {
+  const alvo = normalizeName(vendedor)
+  if (!alvo) return []
+
+  const refIds = new Set(
+    [
+      ...allData.value.novosNegocios,
+      ...allData.value.negociosGanhos,
+      ...allData.value.negociosPerdidos,
+      ...allData.value.negociosAndamento,
+      ...allData.value.novasPropostas,
+      ...allData.value.negociosDesqualificados,
+    ]
+      .filter(l => l.responsavel === vendedor)
+      .map(l => l.referenceId)
+      .filter(Boolean)
+      .map(String)
+  )
+
+  return usersStore.users.filter(
+    u => normalizeName(u.name) === alvo || (u.referenceId && refIds.has(String(u.referenceId)))
+  )
+}
+
 const metaDataSeries = computed(() => {
   if (!props.filters.startDate || !props.filters.endDate) return []
 
   const start = parseLocalDate(props.filters.startDate)
   const end = parseLocalDate(props.filters.endDate)
-  
-  if (isNaN(start) || isNaN(end)) return []
 
-  const allLeads = [
-    ...allData.value.novosNegocios,
-    ...allData.value.negociosGanhos,
-    ...allData.value.negociosPerdidos,
-    ...allData.value.negociosAndamento,
-    ...allData.value.novasPropostas,
-    ...allData.value.negociosDesqualificados,
-  ]
+  if (isNaN(start) || isNaN(end)) return []
 
   let userIds = []
 
@@ -865,12 +892,8 @@ const metaDataSeries = computed(() => {
     // Na visão "Todos", soma a meta de absolutamente todos os usuários do banco de dados
     userIds = usersStore.users.map(u => String(u.id))
   } else {
-    // Com vendedor filtrado, busca o usuário correspondente ao vendedor
-    const targetLeads = allLeads.filter(l => l.responsavel === selectedVendedor.value)
-    const refIds = [...new Set(targetLeads.map(l => l.referenceId).filter(Boolean))]
-    userIds = usersStore.users
-      .filter(u => refIds.includes(u.referenceId))
-      .map(u => String(u.id))
+    // Com vendedor filtrado, soma apenas a meta do usuário correspondente
+    userIds = usersForVendedor(selectedVendedor.value).map(u => String(u.id))
   }
 
   if (!userIds.length) return []

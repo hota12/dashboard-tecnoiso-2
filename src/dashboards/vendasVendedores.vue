@@ -803,6 +803,41 @@ const daysInPeriod = computed(() => {
   return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1
 })
 
+// Normaliza nome para casar vendedor do CRM com usuário do sistema
+function normalizeName(str) {
+  return String(str ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+// Usuários do sistema correspondentes a um vendedor.
+// Casa por nome (fonte confiável: é o mesmo nome usado no cadastro) e,
+// como reforço, pelo referenceId quando o lead traz esse campo.
+function usersForVendedor(vendedor) {
+  const alvo = normalizeName(vendedor)
+  if (!alvo) return []
+
+  const refIds = new Set(
+    [
+      ...allData.value.novosNegocios,
+      ...allData.value.negociosGanhos,
+      ...allData.value.negociosPerdidos,
+      ...allData.value.negociosAndamento,
+      ...allData.value.novasPropostas,
+    ]
+      .filter(l => l.responsavel === vendedor)
+      .map(l => l.referenceId)
+      .filter(Boolean)
+      .map(String)
+  )
+
+  return usersStore.users.filter(
+    u => normalizeName(u.name) === alvo || (u.referenceId && refIds.has(String(u.referenceId)))
+  )
+}
+
 const metaDataSeries = computed(() => {
   if (!props.filters.startDate || !props.filters.endDate) return []
 
@@ -811,22 +846,11 @@ const metaDataSeries = computed(() => {
   
   if (isNaN(start) || isNaN(end)) return []
 
-  const allLeads = [
-    ...allData.value.novosNegocios,
-    ...allData.value.negociosGanhos,
-    ...allData.value.negociosPerdidos,
-    ...allData.value.negociosAndamento,
-  ]
-  const targetLeads = selectedVendedor.value 
-    ? allLeads.filter(l => l.responsavel === selectedVendedor.value)
-    : allLeads
+  const alvos = selectedVendedor.value ? [selectedVendedor.value] : vendedores.value
 
-  const refIds = [...new Set(targetLeads.map(l => l.referenceId).filter(Boolean))]
-  if (!refIds.length) return []
-
-  const userIds = usersStore.users
-    .filter(u => refIds.includes(u.referenceId))
-    .map(u => String(u.id))
+  const userIds = [...new Set(
+    alvos.flatMap(v => usersForVendedor(v).map(u => String(u.id)))
+  )]
 
   if (!userIds.length) return []
 
