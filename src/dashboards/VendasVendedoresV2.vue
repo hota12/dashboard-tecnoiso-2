@@ -254,60 +254,30 @@
             </span>
             <span class="badge-pill badge-orange">{{ kpis.andamento }} em aberto</span>
           </div>
-          <div class="andamento-detalhe-grid">
-            <!-- Follow-up -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(251,140,0,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(251,140,0,0.12);color:#fb8c00;">
-                <i class="bi bi-telephone-outbound"></i>
+          <p class="section-sub">
+            Pipeline aberto hoje — inclui negócios criados antes do período filtrado.
+          </p>
+          <div v-if="!andamentoDetalhe.length" class="funil-empty">
+            Nenhum negócio em aberto{{ selectedVendedor ? ' para este vendedor' : '' }}.
+          </div>
+
+          <div v-else class="andamento-detalhe-grid">
+            <div
+              v-for="item in andamentoDetalhe"
+              :key="item.fase"
+              class="andamento-detalhe-item"
+              :style="{ borderColor: faseTint(item.stage.color, 0.35) }"
+            >
+              <div
+                class="andamento-detalhe-icon"
+                :style="{ background: faseTint(item.stage.color, 0.12), color: item.stage.color }"
+              >
+                <i class="bi" :class="item.stage.icon"></i>
               </div>
               <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Follow-up</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.followup.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.followup.valor) }}</span>
-              </div>
-            </div>
-            <!-- Orçamento -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(255,167,38,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(255,167,38,0.12);color:#ffa726;">
-                <i class="bi bi-file-earmark-text"></i>
-              </div>
-              <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Orçamento</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.orcamento.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.orcamento.valor) }}</span>
-              </div>
-            </div>
-            <!-- Reativação -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(206,147,216,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(206,147,216,0.12);color:#ce93d8;">
-                <i class="bi bi-arrow-repeat"></i>
-              </div>
-              <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Reativação</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.reativacao.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.reativacao.valor) }}</span>
-              </div>
-            </div>
-            <!-- Em Contato -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(66,165,245,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(66,165,245,0.12);color:#42a5f5;">
-                <i class="bi bi-chat-dots"></i>
-              </div>
-              <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Em Contato</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.contato.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.contato.valor) }}</span>
-              </div>
-            </div>
-            <!-- Fila -->
-            <div class="andamento-detalhe-item" style="border-color:rgba(144,202,249,0.35);">
-              <div class="andamento-detalhe-icon" style="background:rgba(144,202,249,0.12);color:#90caf9;">
-                <i class="bi bi-person-lines-fill"></i>
-              </div>
-              <div class="andamento-detalhe-body">
-                <span class="andamento-detalhe-label">Fila</span>
-                <span class="andamento-detalhe-value">{{ andamentoDetalhe.fila.count }}</span>
-                <span class="andamento-detalhe-sub">{{ formatCurrency(andamentoDetalhe.fila.valor) }}</span>
+                <span class="andamento-detalhe-label">{{ item.fase }}</span>
+                <span class="andamento-detalhe-value">{{ item.count }}</span>
+                <span class="andamento-detalhe-sub">{{ formatCurrency(item.valor) }}</span>
               </div>
             </div>
           </div>
@@ -351,6 +321,9 @@
             </span>
             <span class="badge-pill badge-accent">{{ kpis.novos }} negócio(s)</span>
           </div>
+          <p class="section-sub">
+            Negócios criados no período, na fase em que estão hoje.
+          </p>
 
           <div v-if="!chartFunnelData.labels.length" class="funil-empty">
             Nenhum negócio registrado{{ selectedVendedor ? ' para este vendedor' : '' }}.
@@ -418,33 +391,6 @@
               </div>
               <div class="funil-track">
                 <div class="funil-fill motivo-fill" :style="{ width: m.pct + '%' }"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Motivos de Desqualificação -->
-        <div class="motivos-card">
-          <div class="section-header">
-            <span class="section-title">
-              <i class="bi bi-person-x-fill"></i>
-              Motivos de Desqualificação
-            </span>
-            <span class="badge-pill" style="background:rgba(120,144,156,0.12);color:#78909c">{{ kpis.desqualificados }} desqualificado(s)</span>
-          </div>
-
-          <div v-if="!motivosDesqualificados.length" class="funil-empty">
-            Nenhum negócio desqualificado{{ selectedVendedor ? ' para este vendedor' : '' }}.
-          </div>
-
-          <div v-else class="funil-list">
-            <div v-for="m in motivosDesqualificados" :key="m.label" class="funil-item">
-              <div class="funil-item-header">
-                <span class="funil-label">{{ m.label }}</span>
-                <span class="funil-count">{{ m.count }}</span>
-              </div>
-              <div class="funil-track">
-                <div class="funil-fill motivo-desqualificado-fill" :style="{ width: m.pct + '%' }"></div>
               </div>
             </div>
           </div>
@@ -617,7 +563,7 @@
                     <template v-else-if="col.key === 'proximoContato'">
                       <div style="display:flex;align-items:center;gap:6px">
                         <span class="cell-muted">{{ formatDate(row[col.key]) }}</span>
-                        <span v-if="(row.faseAtual === 'NEGOCIAÇÃO' || row.faseAtual === 'ORÇAMENTO') && (!row[col.key] || row[col.key] === 'null' || new Date(row[col.key]).getTime() < Date.now())" class="badge-pill" style="background:rgba(229,57,53,0.12);color:#ef5350;font-size:10px;padding:2px 6px;" title="Sem próximo contato ou vencido">
+                        <span v-if="isFaseAberta(row.faseAtual) && (!row[col.key] || row[col.key] === 'null' || new Date(row[col.key]).getTime() < Date.now())" class="badge-pill" style="background:rgba(229,57,53,0.12);color:#ef5350;font-size:10px;padding:2px 6px;" title="Sem próximo contato ou vencido">
                           Sem ação agendada
                         </span>
                       </div>
@@ -660,6 +606,7 @@ import {
 } from 'chart.js'
 import { FunnelController, TrapezoidElement } from 'chartjs-chart-funnel'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
+import { agruparPorFase, isFaseAberta, faseTint, FASE_DESCONHECIDA } from '@/config/fases'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Filler, Tooltip, Legend, FunnelController, TrapezoidElement)
 
@@ -709,7 +656,6 @@ const allData = computed(() => ({
   negociosPerdidos:  raw.value?.negociosPerdidos  ?? [],
   negociosAndamento: raw.value?.negociosAndamento ?? [],
   novasPropostas:    raw.value?.novasPropostas    ?? [],
-  negociosDesqualificados: raw.value?.negociosDesqualificados ?? [],
 }))
 
 // ─── Lista de vendedores únicos ────────────────────────────────
@@ -735,7 +681,6 @@ const filtered = computed(() => {
     negociosPerdidos:  allData.value.negociosPerdidos.filter(l => l.responsavel === v),
     negociosAndamento: allData.value.negociosAndamento.filter(l => l.responsavel === v),
     novasPropostas:    allData.value.novasPropostas.filter(l => l.responsavel === v),
-    negociosDesqualificados: allData.value.negociosDesqualificados.filter(l => l.responsavel === v),
   }
 })
 
@@ -753,8 +698,7 @@ const kpis = computed(() => {
 
   const now = new Date().getTime()
   const andamentoAtrasados = negociosAndamento.filter(l => {
-    const isTargetFase = ['FILA', 'EM CONTATO', 'REATIVAÇÃO', 'ORÇAMENTO', 'FOLLOW-UP DE ORÇAMENTO'].includes(l.faseAtual)
-    if (!isTargetFase) return false
+    if (!isFaseAberta(l.faseAtual)) return false
     if (!l.proximoContato || l.proximoContato === 'null') return true
     return new Date(l.proximoContato).getTime() < now
   }).length
@@ -773,40 +717,14 @@ const kpis = computed(() => {
     ticketMedio,
     valorPropostasGeradas,
     qtdPropostasGeradas,
-    desqualificados: filtered.value.negociosDesqualificados.length,
   }
 })
 
-// Detalhamento dos negócios em aberto por fase
-const andamentoDetalhe = computed(() => {
-  const result = {
-    followup:   { count: 0, valor: 0 },
-    orcamento:  { count: 0, valor: 0 },
-    reativacao: { count: 0, valor: 0 },
-    contato:    { count: 0, valor: 0 },
-    fila:       { count: 0, valor: 0 },
-  }
-  filtered.value.negociosAndamento.forEach(l => {
-    const val = Number(l.valorOrcamento) || 0
-    if (l.faseAtual === 'FOLLOW-UP DE ORÇAMENTO') {
-      result.followup.count++
-      result.followup.valor += val
-    } else if (l.faseAtual === 'ORÇAMENTO') {
-      result.orcamento.count++
-      result.orcamento.valor += val
-    } else if (l.faseAtual === 'REATIVAÇÃO') {
-      result.reativacao.count++
-      result.reativacao.valor += val
-    } else if (l.faseAtual === 'EM CONTATO') {
-      result.contato.count++
-      result.contato.valor += val
-    } else if (l.faseAtual === 'FILA') {
-      result.fila.count++
-      result.fila.valor += val
-    }
-  })
-  return result
-})
+// Detalhamento dos negócios em aberto por fase — monta um card por fase que
+// realmente aparece nos dados, na ordem do funil
+const andamentoDetalhe = computed(() =>
+  agruparPorFase(filtered.value.negociosAndamento, { valorDe: l => l.valorOrcamento })
+)
 
 // ─── Ranking de Vendedores ──────────────────────────────────
 const rankingVendedores = computed(() => {
@@ -1121,60 +1039,19 @@ function chartOptionsValor(color, suggestedMax = 1000) {
 }
 
 // ─── Seção 3: Funil por Fase ───────────────────────────────────
-const FASE_ORDER  = [
-  'FILA',
-  'EM CONTATO',
-  'REATIVAÇÃO',
-  'ORÇAMENTO',
-  'FOLLOW-UP DE ORÇAMENTO',
-  'VENDA',
-  'PERDIDO/REPROVADO',
-  'DESQUALIFICADO'
-]
-const FASE_COLORS = {
-  'FILA': '#90caf9',
-  'EM CONTATO': '#42a5f5',
-  'REATIVAÇÃO': '#ce93d8',
-  'ORÇAMENTO': '#ffa726',
-  'FOLLOW-UP DE ORÇAMENTO': '#fb8c00',
-  'VENDA': '#66bb6a',
-  'PERDIDO/REPROVADO': '#ef5350',
-  'DESQUALIFICADO': '#78909c',
-}
-
+// A ordem, a cor e o grupo de cada fase vêm de @/config/fases — o rótulo
+// exibido é o nome exato cadastrado no CRM (ex.: "FOLLOW-UP - 30 DIAS")
 const fasesFunil = computed(() => {
-  const map = {}
-  filtered.value.novosNegocios.forEach(l => {
-    const fase = l.faseAtual || 'Sem fase'
-    map[fase] = (map[fase] ?? 0) + 1
-  })
+  const grupos = agruparPorFase(filtered.value.novosNegocios)
+  const max = Math.max(...grupos.map(g => g.count), 1)
 
-  const max = Math.max(...Object.values(map), 1)
-
-  // Fases conhecidas na ordem definida
-  const ordered = FASE_ORDER
-    .filter(f => map[f] !== undefined)
-    .map(f => ({
-      label:   f,
-      count:   map[f],
-      pct:     Math.round((map[f] / max) * 100),
-      color:   FASE_COLORS[f],
-      unknown: false,
-    }))
-
-  // Fases desconhecidas ao final
-  const unknown = Object.entries(map)
-    .filter(([label]) => !FASE_ORDER.includes(label))
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, count]) => ({
-      label,
-      count,
-      pct:     Math.round((count / max) * 100),
-      color:   '#78909c',
-      unknown: true,
-    }))
-
-  return [...ordered, ...unknown]
+  return grupos.map(g => ({
+    label:   g.fase,
+    count:   g.count,
+    pct:     Math.round((g.count / max) * 100),
+    color:   g.stage.color,
+    unknown: g.stage.id === FASE_DESCONHECIDA.id,
+  }))
 })
 
 // Dados para o gráfico de funil (chartjs-chart-funnel)
@@ -1318,22 +1195,6 @@ const motivosPerdidos = computed(() => {
   const map = {}
   filtered.value.negociosPerdidos.forEach(l => {
     const motivo = l.motivoPerdido || 'Sem motivo informado'
-    map[motivo] = (map[motivo] ?? 0) + 1
-  })
-  const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
-  const max = entries[0]?.[1] ?? 1
-  return entries.map(([label, count]) => ({
-    label,
-    count,
-    pct: Math.round((count / max) * 100),
-  }))
-})
-
-// ─── Seção 5: Motivos de Desqualificação ──────────────────────
-const motivosDesqualificados = computed(() => {
-  const map = {}
-  filtered.value.negociosDesqualificados.forEach(l => {
-    const motivo = l.motivoDesqualificado || 'Sem motivo informado'
     map[motivo] = (map[motivo] ?? 0) + 1
   })
   const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
@@ -1865,6 +1726,14 @@ function exportToExcel() {
 }
 .section-title i { color: var(--color-placeholder); }
 
+/* Legenda do card: os containers medem recortes diferentes (pipeline atual x
+   negócios criados no período), então cada um diz o que está contando */
+.section-sub {
+  font-size: 11px;
+  color: var(--color-placeholder);
+  margin: 2px 0 10px;
+}
+
 .badge-orange { background: rgba(255,167,38,0.15); color: #e65100; }
 
 .funil-empty {
@@ -1931,9 +1800,6 @@ function exportToExcel() {
 }
 .motivo-fill {
   background: linear-gradient(90deg, #ef5350, #ff8a80) !important;
-}
-.motivo-desqualificado-fill {
-  background: linear-gradient(90deg, #78909c, #b0bec5) !important;
 }
 
 /* ── Micro Toggle ──────────────────────────────────────── */
