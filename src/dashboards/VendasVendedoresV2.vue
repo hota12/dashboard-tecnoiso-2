@@ -5,7 +5,7 @@
     <template v-if="loading">
       <div class="skeleton selector-skeleton"></div>
       <div class="kpi-row">
-        <div class="skeleton kpi-skeleton" v-for="i in 5" :key="i"></div>
+        <div class="skeleton kpi-skeleton" v-for="i in 7" :key="i"></div>
       </div>
     </template>
 
@@ -48,27 +48,75 @@
       <!-- ── KPIs ─────────────────────────────────────────────── -->
       <div class="kpi-row">
 
-        <!-- Novos Negócios -->
+        <!-- Novos Orçamentos -->
         <div class="kpi-card">
           <div class="kpi-icon" style="background:rgba(30,136,229,0.12);color:#42a5f5">
             <i class="bi bi-briefcase-fill"></i>
           </div>
           <div class="kpi-body">
-            <span class="kpi-label">Novos Negócios</span>
-            <span class="kpi-value">{{ kpis.novos }}</span>
+            <span class="kpi-label">Novos Orçamentos</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="kpi-value">{{ kpis.novos }}</span>
+              <span v-if="kpis.valorNovos > 0" class="badge-pill" style="background:rgba(30,136,229,0.12);color:#42a5f5;font-size:10px;padding:2px 6px;" title="Valor total em novos orçamentos">
+                {{ formatCurrency(kpis.valorNovos) }}
+              </span>
+            </div>
           </div>
           <button class="kpi-detail-btn" @click="openModal('novos')" data-tooltip="Ver detalhes">
             <i class="bi bi-table"></i>
           </button>
         </div>
 
-        <!-- Ganhos -->
+        <!-- Em Contato -->
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(38,198,218,0.12);color:#26c6da">
+            <i class="bi bi-chat-dots-fill"></i>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-label kpi-label-flex">
+              Em Contato
+              <span class="tooltip-icon" data-tooltip="Orçamentos que entraram na fase de contato pela primeira vez dentro do período">
+                <i class="bi bi-info-circle"></i>
+              </span>
+            </span>
+            <span class="kpi-value">{{ kpis.contatos }}</span>
+          </div>
+          <button class="kpi-detail-btn" @click="openModal('contatos')" data-tooltip="Ver detalhes">
+            <i class="bi bi-table"></i>
+          </button>
+        </div>
+
+        <!-- Orçamentos Aprovados -->
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(38,166,154,0.12);color:#26a69a">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-label kpi-label-flex">
+              Orçamentos Aprovados
+              <span class="tooltip-icon" data-tooltip="Orçamentos que entraram na fase de orçamento aprovado pela primeira vez dentro do período">
+                <i class="bi bi-info-circle"></i>
+              </span>
+            </span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="kpi-value">{{ kpis.aprovados }}</span>
+              <span v-if="kpis.valorAprovados > 0" class="badge-pill" style="background:rgba(38,166,154,0.12);color:#26a69a;font-size:10px;padding:2px 6px;" title="Valor total em orçamentos aprovados">
+                {{ formatCurrency(kpis.valorAprovados) }}
+              </span>
+            </div>
+          </div>
+          <button class="kpi-detail-btn" @click="openModal('aprovados')" data-tooltip="Ver detalhes">
+            <i class="bi bi-table"></i>
+          </button>
+        </div>
+
+        <!-- Faturados -->
         <div class="kpi-card">
           <div class="kpi-icon" style="background:rgba(67,160,71,0.12);color:#66bb6a">
             <i class="bi bi-trophy-fill"></i>
           </div>
           <div class="kpi-body">
-            <span class="kpi-label">Negócios Ganhos</span>
+            <span class="kpi-label">Orçamentos Faturados</span>
             <span class="kpi-value">{{ kpis.ganhos }}</span>
           </div>
           <button class="kpi-detail-btn" @click="openModal('ganhos')" data-tooltip="Ver detalhes">
@@ -76,13 +124,13 @@
           </button>
         </div>
 
-        <!-- Perdidos -->
+        <!-- Reprovados -->
         <div class="kpi-card">
           <div class="kpi-icon" style="background:rgba(229,57,53,0.12);color:#ef5350">
             <i class="bi bi-x-circle-fill"></i>
           </div>
           <div class="kpi-body">
-            <span class="kpi-label">Negócios Perdidos</span>
+            <span class="kpi-label">Orçamentos Reprovados</span>
             <span class="kpi-value">{{ kpis.perdidos }}</span>
           </div>
           <button class="kpi-detail-btn" @click="openModal('perdidos')" data-tooltip="Ver detalhes">
@@ -90,15 +138,18 @@
           </button>
         </div>
 
-        <!-- Andamento -->
+        <!-- Em Aberto -->
         <div class="kpi-card">
           <div class="kpi-icon" style="background:rgba(255,167,38,0.12);color:#ffa726">
             <i class="bi bi-hourglass-split"></i>
           </div>
           <div class="kpi-body">
-            <span class="kpi-label">Em Andamento</span>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="kpi-label">Orçamentos em Aberto</span>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span class="kpi-value">{{ kpis.andamento }}</span>
+              <span v-if="kpis.valorAndamento > 0" class="badge-pill" style="background:rgba(255,167,38,0.12);color:#ffa726;font-size:10px;padding:2px 6px;" title="Valor total em orçamentos abertos">
+                {{ formatCurrency(kpis.valorAndamento) }}
+              </span>
               <span v-if="kpis.andamentoAtrasados > 0" class="badge-pill" style="background:rgba(229,57,53,0.12);color:#ef5350;font-size:10px;padding:2px 6px;" title="Sem próximo contato ou vencido">
                 {{ kpis.andamentoAtrasados }} sem ação agendada
               </span>
@@ -109,19 +160,19 @@
           </button>
         </div>
 
-        <!-- Taxa de Conversão -->
-        <div class="kpi-card kpi-card--highlight">
-          <div class="kpi-icon" style="background:rgba(216,139,73,0.12);color:#D88B49">
-            <i class="bi bi-percent"></i>
+        <!-- Tempo Médio de Aprovação -->
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(126,87,194,0.12);color:#7e57c2">
+            <i class="bi bi-stopwatch-fill"></i>
           </div>
           <div class="kpi-body">
             <span class="kpi-label kpi-label-flex">
-              Taxa de Conversão
-              <span class="tooltip-icon" data-tooltip="Ganhos ÷ Novos Negócios × 100">
+              Tempo Médio de Aprovação
+              <span class="tooltip-icon" data-tooltip="Média de dias entre a criação do orçamento e a entrada na fase de orçamento aprovado">
                 <i class="bi bi-info-circle"></i>
               </span>
             </span>
-            <span class="kpi-value kpi-value--accent">{{ kpis.taxa }}</span>
+            <span class="kpi-value">{{ kpis.tempoMedioAprovacao }}</span>
           </div>
         </div>
 
@@ -131,13 +182,18 @@
       <div style="display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; align-items: stretch;">
         
         <!-- Velocímetro e KPIs (Esquerda) -->
-        <div class="value-card speedometer-card" style="flex: 1; min-width: 380px; display: flex; flex-direction: row; gap: 16px; padding: 24px; justify-content: space-between; align-items: center; margin: 0;">
+        <!-- Sem min-width fixo de propósito: o velocímetro tem largura fixa e o
+             valor faturado não quebra linha, então o conteúdo precisa de ~460px.
+             Um min-width menor que isso vira piso para o flex e faz a coluna da
+             meta vazar para fora do card. Com min-width automático o piso é o
+             próprio min-content, e a linha quebra quando não couber. -->
+        <div class="value-card speedometer-card" style="flex: 1; display: flex; flex-direction: row; gap: 16px; padding: 24px; justify-content: space-between; align-items: center; margin: 0;">
           
           <!-- Lado Esquerdo: Resultados Realizados -->
           <div style="display: flex; flex-direction: column; justify-content: center; flex: 1;">
             <div style="margin-bottom: 24px;">
               <span class="value-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--color-placeholder); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                <i class="bi bi-currency-dollar" style="font-size: 13px;"></i> Valor Total Ganho
+                <i class="bi bi-currency-dollar" style="font-size: 13px;"></i> Valor Total Faturado
               </span>
               <span class="value-amount" style="font-size: 32px; font-weight: 700; color: var(--color-heading); line-height: 1;">
                 {{ formatCurrency(kpis.valorTotal) }}
@@ -160,16 +216,14 @@
           <!-- Lado Direito: Acompanhamento da Meta -->
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;">
             
-            <div class="speedometer-chart" style="width: 180px; height: 90px; position: relative; margin-bottom: 16px;">
-              <Doughnut v-if="metaPeriodo > 0" :data="chartSpeedometerData" :options="speedometerOptions" />
-              <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--color-placeholder);font-size:12px;text-align:center;">
-                Sem meta
+            <div class="speedometer-chart">
+              <div class="speedometer-canvas">
+                <Doughnut v-if="metaPeriodo > 0" :data="chartSpeedometerData" :options="speedometerOptions" />
+                <div v-else class="speedometer-empty">Sem meta</div>
               </div>
-              
-              <!-- Percentual centralizado -->
-              <div v-if="metaPeriodo > 0" style="position: absolute; bottom: 0px; left: 0; right: 0; text-align: center; font-size: 22px; font-weight: 800; color: var(--color-heading);">
-                {{ percentualMeta }}%
-              </div>
+
+              <!-- Percentual, encaixado na abertura do anel -->
+              <div v-if="metaPeriodo > 0" class="speedometer-value">{{ percentualMeta }}%</div>
             </div>
             
             <div v-if="metaPeriodo > 0" style="display: flex; flex-direction: column; gap: 6px; align-items: center; text-align: center;">
@@ -192,51 +246,12 @@
           <div class="chart-header">
             <span class="chart-title">
               <i class="bi bi-currency-dollar"></i>
-              Valor Ganho — Acumulado
+              Valor Faturado — Acumulado
             </span>
             <span class="badge-pill badge-accent">{{ formatCurrency(kpis.valorTotal) }}</span>
           </div>
           <div class="chart-wrapper" style="flex: 1;">
             <Line :data="chartValor" :options="chartOptionsValor('#D88B49', Math.max(kpis.valorTotal, metaPeriodo) * 1.2)" />
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ── Propostas Geradas ────────────────────────────────────────────────── -->
-      <div style="display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; align-items: stretch;">
-        
-        <!-- KPIs de Propostas (Esquerda) -->
-        <div class="value-card speedometer-card" style="flex: 1; min-width: 380px; display: flex; flex-direction: column; justify-content: center; padding: 24px; margin: 0;">
-          <div style="margin-bottom: 24px;">
-            <span class="value-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--color-placeholder); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-              <i class="bi bi-file-earmark-text" style="font-size: 13px;"></i> Valor Total em Propostas
-            </span>
-            <span class="value-amount" style="font-size: 32px; font-weight: 700; color: var(--color-heading); line-height: 1;">
-              {{ formatCurrency(kpis.valorPropostasGeradas) }}
-            </span>
-          </div>
-          <div>
-            <span class="value-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--color-placeholder); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-              <i class="bi bi-files" style="font-size: 13px;"></i> Volume de Propostas
-            </span>
-            <span class="value-amount" style="font-size: 20px; font-weight: 600; color: var(--color-text); line-height: 1;">
-              {{ kpis.qtdPropostasGeradas }} propostas emitidas
-            </span>
-          </div>
-        </div>
-
-        <!-- Gráfico Acumulado de Propostas (Direita) -->
-        <div class="chart-card" style="flex: 2; min-width: 400px; margin: 0; display: flex; flex-direction: column;">
-          <div class="chart-header">
-            <span class="chart-title">
-              <i class="bi bi-graph-up-arrow"></i>
-              Propostas Geradas — Acumulado
-            </span>
-            <span class="badge-pill badge-accent" style="background: rgba(156, 39, 176, 0.12); color: #9C27B0;">{{ formatCurrency(kpis.valorPropostasGeradas) }}</span>
-          </div>
-          <div class="chart-wrapper" style="flex: 1;">
-            <Line :data="chartPropostas" :options="chartOptionsValor('#9C27B0', kpis.valorPropostasGeradas * 1.2)" />
           </div>
         </div>
 
@@ -250,15 +265,15 @@
           <div class="section-header" style="margin-bottom:4px;">
             <span class="section-title">
               <i class="bi bi-hourglass-split"></i>
-              Negócios em Aberto — Detalhamento
+              Orçamentos em Aberto — Detalhamento
             </span>
             <span class="badge-pill badge-orange">{{ kpis.andamento }} em aberto</span>
           </div>
           <p class="section-sub">
-            Pipeline aberto hoje — inclui negócios criados antes do período filtrado.
+            Pipeline aberto hoje — inclui orçamentos criados antes do período filtrado.
           </p>
           <div v-if="!andamentoDetalhe.length" class="funil-empty">
-            Nenhum negócio em aberto{{ selectedVendedor ? ' para este vendedor' : '' }}.
+            Nenhum orçamento em aberto{{ selectedVendedor ? ' para este vendedor' : '' }}.
           </div>
 
           <div v-else class="andamento-detalhe-grid">
@@ -288,9 +303,9 @@
           <div class="section-header">
             <span class="section-title">
               <i class="bi bi-bar-chart-steps"></i>
-              Ranking de Vendedores (Ganhos)
+              Ranking de Vendedores (Faturados)
             </span>
-            <span class="badge-pill badge-accent">{{ kpis.ganhos }} ganho(s)</span>
+            <span class="badge-pill badge-accent">{{ kpis.ganhos }} faturado(s)</span>
           </div>
           <div v-if="!rankingVendedores.length" class="funil-empty">Sem dados de vendas para rankear.</div>
           <div v-else class="funil-list">
@@ -317,16 +332,16 @@
           <div class="section-header">
             <span class="section-title">
               <i class="bi bi-filter-circle-fill"></i>
-              Novos Negócios — Funil por Fase
+              Novos Orçamentos — Funil por Fase
             </span>
-            <span class="badge-pill badge-accent">{{ kpis.novos }} negócio(s)</span>
+            <span class="badge-pill badge-accent">{{ kpis.novos }} orçamento(s)</span>
           </div>
           <p class="section-sub">
-            Negócios criados no período, na fase em que estão hoje.
+            Orçamentos criados no período, na fase em que estão hoje.
           </p>
 
           <div v-if="!chartFunnelData.labels.length" class="funil-empty">
-            Nenhum negócio registrado{{ selectedVendedor ? ' para este vendedor' : '' }}.
+            Nenhum orçamento registrado{{ selectedVendedor ? ' para este vendedor' : '' }}.
           </div>
 
           <div v-else class="funnel-chart-wrapper">
@@ -334,36 +349,42 @@
           </div>
         </div>
 
-        <!-- Canais de Venda (Esquerda) -->
+        <!-- Oportunidades por Origem (faturadas / perdidas) -->
         <div class="canais-card">
           <div class="section-header">
             <span class="section-title">
               <i class="bi bi-megaphone-fill"></i>
-              Ranking de Canais de Venda (Ganhos)
+              Oportunidades por Origem
             </span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span class="badge-pill badge-green" v-if="topCanal">{{ topCanal.label }}</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+              <div class="micro-toggle">
+                <button :class="{ active: modoOportunidades === 'faturadas' }" @click="modoOportunidades = 'faturadas'">Faturadas</button>
+                <button :class="{ active: modoOportunidades === 'perdidas' }" @click="modoOportunidades = 'perdidas'">Reprovadas</button>
+              </div>
               <div class="micro-toggle">
                 <button :class="{ active: !canaisIncludeMedium }" @click="canaisIncludeMedium = false">Fonte</button>
                 <button :class="{ active: canaisIncludeMedium }" @click="canaisIncludeMedium = true">+ Mídia</button>
               </div>
             </div>
           </div>
+          <p class="section-sub">
+            {{ isFaturadas ? 'Orçamentos faturados no período, rankeados por valor.' : 'Orçamentos reprovados no período, rankeados por volume.' }}
+          </p>
 
-          <div v-if="!canaisVenda.length" class="funil-empty">
-            Nenhuma venda concluída para gerar ranking{{ selectedVendedor ? ' neste vendedor' : '' }}.
+          <div v-if="!oportunidadesPorOrigem.length" class="funil-empty">
+            Nenhuma oportunidade {{ isFaturadas ? 'faturada' : 'reprovada' }}{{ selectedVendedor ? ' para este vendedor' : '' }}.
           </div>
 
           <div v-else class="funil-list">
-            <div v-for="c in canaisVenda" :key="c.label" class="funil-item">
+            <div v-for="c in oportunidadesPorOrigem" :key="c.label" class="funil-item">
               <div class="funil-item-header">
                 <span class="funil-label">{{ c.label }}</span>
                 <span class="funil-count" style="color:var(--color-text);">
-                  {{ c.count }} Venda(s) — <strong>{{ formatCurrency(c.value) }}</strong>
+                  {{ c.count }} oportunidade(s)<template v-if="isFaturadas"> — <strong>{{ formatCurrency(c.value) }}</strong></template>
                 </span>
               </div>
               <div class="funil-track">
-                <div class="funil-fill" style="background:#43a047" :style="{ width: c.pct + '%' }"></div>
+                <div class="funil-fill" :style="{ width: c.pct + '%', background: isFaturadas ? '#43a047' : '#ef5350' }"></div>
               </div>
             </div>
           </div>
@@ -374,13 +395,13 @@
           <div class="section-header">
             <span class="section-title">
               <i class="bi bi-emoji-frown"></i>
-              Motivos de Perda
+              Motivos de Reprovação
             </span>
-            <span class="badge-pill" style="background:rgba(229,57,53,0.12);color:#c62828">{{ kpis.perdidos }} perdido(s)</span>
+            <span class="badge-pill" style="background:rgba(229,57,53,0.12);color:#c62828">{{ kpis.perdidos }} reprovado(s)</span>
           </div>
 
           <div v-if="!motivosPerdidos.length" class="funil-empty">
-            Nenhum negócio perdido{{ selectedVendedor ? ' para este vendedor' : '' }}.
+            Nenhum orçamento reprovado{{ selectedVendedor ? ' para este vendedor' : '' }}.
           </div>
 
           <div v-else class="funil-list">
@@ -396,15 +417,15 @@
           </div>
         </div>
 
-        <!-- ── Novos Negócios por Origem ──────────────────────────── -->
+        <!-- ── Novos Orçamentos por Origem ────────────────────────── -->
         <div class="canais-card">
           <div class="section-header">
             <span class="section-title">
               <i class="bi bi-radar"></i>
-              Novos Negócios por Origem
+              Novos Orçamentos por Origem
             </span>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span class="badge-pill badge-accent">{{ kpis.novos }} negócio(s)</span>
+              <span class="badge-pill badge-accent">{{ kpis.novos }} orçamento(s)</span>
               <div class="micro-toggle">
                 <button :class="{ active: !origemIncludeMedium }" @click="origemIncludeMedium = false">Fonte</button>
                 <button :class="{ active: origemIncludeMedium }" @click="origemIncludeMedium = true">+ Mídia</button>
@@ -413,7 +434,7 @@
           </div>
 
           <div v-if="!origemNovosNegocios.length" class="funil-empty">
-            Nenhum negócio com origem registrada{{ selectedVendedor ? ' para este vendedor' : '' }}.
+            Nenhum orçamento com origem registrada{{ selectedVendedor ? ' para este vendedor' : '' }}.
           </div>
 
           <div v-else class="funil-list">
@@ -440,7 +461,7 @@
             </span>
             <div class="micro-toggle">
               <button :class="{ active: filterClienteDaCasa === 'novos' }" @click="filterClienteDaCasa = 'novos'">Novos</button>
-              <button :class="{ active: filterClienteDaCasa === 'ganhos' }" @click="filterClienteDaCasa = 'ganhos'">Ganhos</button>
+              <button :class="{ active: filterClienteDaCasa === 'ganhos' }" @click="filterClienteDaCasa = 'ganhos'">Faturados</button>
             </div>
           </div>
           <div v-if="!distClienteDaCasa.length" class="funil-empty">Sem dados.</div>
@@ -457,20 +478,20 @@
           </div>
         </div>
 
-        <!-- ── Negócios por Interesse ─────────────────────────── -->
+        <!-- ── Orçamentos por Interesse ───────────────────────── -->
         <div class="canais-card">
           <div class="section-header">
             <span class="section-title">
               <i class="bi bi-tags-fill"></i>
-              Negócios por Interesse
+              Orçamentos por Interesse
             </span>
             <div class="micro-toggle">
               <button :class="{ active: filterInteresse === 'novos' }" @click="filterInteresse = 'novos'">Novos</button>
-              <button :class="{ active: filterInteresse === 'ganhos' }" @click="filterInteresse = 'ganhos'">Ganhos</button>
+              <button :class="{ active: filterInteresse === 'ganhos' }" @click="filterInteresse = 'ganhos'">Faturados</button>
             </div>
           </div>
           <div v-if="!negociosPorCategoria.length" class="funil-empty">
-            Sem interesses registrados nos negócios {{ filterInteresse === 'novos' ? 'novos' : 'ganhos' }}{{ selectedVendedor ? ' para este vendedor' : '' }}.
+            Sem interesses registrados nos orçamentos {{ filterInteresse === 'novos' ? 'novos' : 'faturados' }}{{ selectedVendedor ? ' para este vendedor' : '' }}.
           </div>
           <div v-else class="funil-list">
             <div v-for="item in negociosPorCategoria" :key="item.label" class="funil-item">
@@ -485,6 +506,55 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- ── Taxas de Conversão por Safra ─────────────────────── -->
+      <div class="conversao-section">
+        <div class="section-header">
+          <span class="section-title">
+            <i class="bi bi-funnel-fill"></i>
+            Taxas de Conversão por Safra
+          </span>
+          <span class="badge-pill badge-accent">{{ periodoSafra }}</span>
+        </div>
+        <p class="section-sub">
+          A safra é o próprio período filtrado: o denominador são os orçamentos que
+          entraram na etapa dentro do período, e o desfecho conta mesmo que tenha
+          acontecido depois. Por isso estes números não batem com os KPIs do topo.
+        </p>
+
+        <div class="conversao-grid">
+          <div
+            v-for="t in taxasConversao"
+            :key="t.key"
+            class="conversao-card"
+            :class="{ 'conversao-card--destaque': t.destaque }"
+          >
+            <div class="conversao-head">
+              <span class="conversao-titulo">{{ t.titulo }}</span>
+              <i v-if="t.destaque" class="bi bi-star-fill conversao-star" title="Indicador crítico"></i>
+            </div>
+
+            <span class="conversao-pct" :style="{ color: t.total ? t.cor : 'var(--color-placeholder)' }">
+              {{ formatPct(t.pct) }}
+            </span>
+
+            <div class="funil-track">
+              <div class="funil-fill" :style="{ width: (t.pct ?? 0) + '%', background: t.cor }"></div>
+            </div>
+
+            <span class="conversao-detalhe">
+              <template v-if="t.total">
+                <strong>{{ t.parte }}</strong> {{ t.rotulo }} de <strong>{{ t.total }}</strong> na safra
+              </template>
+              <template v-else>
+                Sem orçamentos na safra{{ selectedVendedor ? ' para este vendedor' : '' }}
+              </template>
+            </span>
+
+            <span class="conversao-sub">{{ t.sub }}</span>
+          </div>
+        </div>
       </div>
 
     </template>
@@ -574,6 +644,11 @@
                     <template v-else-if="col.isCurrency">
                       {{ formatCurrency(Number(row[col.key]) || 0) }}
                     </template>
+                    <template v-else-if="col.isNumber">
+                      <span :class="{ 'cell-muted': row[col.key] === null || row[col.key] === undefined }">
+                        {{ row[col.key] ?? '—' }}
+                      </span>
+                    </template>
                     <template v-else>
                       {{ row[col.key] || '—' }}
                     </template>
@@ -606,7 +681,7 @@ import {
 } from 'chart.js'
 import { FunnelController, TrapezoidElement } from 'chartjs-chart-funnel'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
-import { agruparPorFase, isFaseAberta, faseTint, FASE_DESCONHECIDA } from '@/config/fases'
+import { agruparPorFase, isFaseAberta, isFasePerdida, faseTint, FASE_DESCONHECIDA } from '@/config/fases'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Filler, Tooltip, Legend, FunnelController, TrapezoidElement)
 
@@ -624,6 +699,7 @@ const filterClienteDaCasa = ref('novos')
 const filterInteresse     = ref('ganhos')
 const origemIncludeMedium = ref(false)
 const canaisIncludeMedium = ref(false)
+const modoOportunidades   = ref('faturadas')
 
 import { useGoalsStore } from '@/stores/goals'
 import { useUsersStore } from '@/stores/users'
@@ -650,12 +726,68 @@ const raw = computed(() => {
   return Array.isArray(payload) ? payload[0] : payload
 })
 
+// `novosContatos` e `novosOrcamentosAprovados` são eventos de entrada em fase:
+// cada item é a PRIMEIRA vez que o negócio entrou naquela fase dentro do
+// período. A data do evento chega no mesmo campo `dataVenda` usado pelas
+// outras listas, e o valor pode vir com nomes diferentes conforme a fase —
+// por isso a normalização em `_dataFase` / `_valor` / `_diasAteFase`.
+const DATA_FASE_FIELDS = ['dataFase', 'dataAprovacao', 'dataVenda', 'criadoEm']
+const VALOR_FIELDS     = ['valorOrcamento', 'valorPedido', 'valor']
+
+function pickDate(l) {
+  for (const f of DATA_FASE_FIELDS) {
+    if (l[f] && l[f] !== 'null') return l[f]
+  }
+  return null
+}
+
+function pickValor(l) {
+  for (const f of VALOR_FIELDS) {
+    if (l[f] !== undefined && l[f] !== null && l[f] !== 'null') return Number(l[f]) || 0
+  }
+  return 0
+}
+
+// Dias entre a criação do negócio e a entrada na fase. `null` quando falta uma
+// das datas ou quando o evento é anterior à criação (inconsistência do CRM).
+function diasAteFase(criadoEm, dataFase) {
+  if (!criadoEm || criadoEm === 'null' || !dataFase) return null
+  const ini = new Date(criadoEm).getTime()
+  const fim = new Date(dataFase).getTime()
+  if (!Number.isFinite(ini) || !Number.isFinite(fim) || fim < ini) return null
+  return Math.round(((fim - ini) / 86400000) * 10) / 10
+}
+
+function normalizeEventoFase(list) {
+  return list.map(l => {
+    const _dataFase = pickDate(l)
+    return {
+      ...l,
+      _dataFase,
+      _valor: pickValor(l),
+      _diasAteFase: diasAteFase(l.criadoEm, _dataFase),
+    }
+  })
+}
+
 const allData = computed(() => ({
   novosNegocios:     raw.value?.novosNegocios     ?? [],
   negociosGanhos:    raw.value?.negociosGanhos    ?? [],
   negociosPerdidos:  raw.value?.negociosPerdidos  ?? [],
   negociosAndamento: raw.value?.negociosAndamento ?? [],
+  // `novasPropostas` não alimenta mais nenhum bloco visual — fica só na união
+  // abaixo para que um vendedor que apareça apenas nela não suma dos filtros
   novasPropostas:    raw.value?.novasPropostas    ?? [],
+  novosContatos:            normalizeEventoFase(raw.value?.novosContatos            ?? []),
+  novosOrcamentosAprovados: normalizeEventoFase(raw.value?.novosOrcamentosAprovados ?? []),
+
+  // Safras das taxas de conversão. O backend já recorta cada uma pelo período
+  // filtrado, então aqui elas entram cruas — o único filtro aplicado depois é
+  // o do vendedor.
+  txNovosFaturados:              raw.value?.txNovosFaturados              ?? [],
+  txNovosOrcamentoAprovado:      raw.value?.txNovosOrcamentoAprovado      ?? [],
+  txOrcamentoAprovadoFaturados:  raw.value?.txOrcamentoAprovadoFaturados  ?? [],
+  txOrcamentoAprovadoReprovados: raw.value?.txOrcamentoAprovadoReprovados ?? [],
 }))
 
 // ─── Lista de vendedores únicos ────────────────────────────────
@@ -666,6 +798,8 @@ const vendedores = computed(() => {
     ...allData.value.negociosPerdidos,
     ...allData.value.negociosAndamento,
     ...allData.value.novasPropostas,
+    ...allData.value.novosContatos,
+    ...allData.value.novosOrcamentosAprovados,
   ]
   const set = new Set(all.map(l => l.responsavel).filter(Boolean))
   return [...set].sort()
@@ -680,13 +814,30 @@ const filtered = computed(() => {
     negociosGanhos:    allData.value.negociosGanhos.filter(l => l.responsavel === v),
     negociosPerdidos:  allData.value.negociosPerdidos.filter(l => l.responsavel === v),
     negociosAndamento: allData.value.negociosAndamento.filter(l => l.responsavel === v),
-    novasPropostas:    allData.value.novasPropostas.filter(l => l.responsavel === v),
+    novosContatos:            allData.value.novosContatos.filter(l => l.responsavel === v),
+    novosOrcamentosAprovados: allData.value.novosOrcamentosAprovados.filter(l => l.responsavel === v),
+
+    // As safras vêm de outra query e o CRM entrega nomes com espaço sobrando
+    // ("Luiz Gustavo "), então aqui o casamento é normalizado — uma diferença
+    // de espaço zeraria a taxa do vendedor sem nenhum aviso.
+    txNovosFaturados:              porVendedor(allData.value.txNovosFaturados, v),
+    txNovosOrcamentoAprovado:      porVendedor(allData.value.txNovosOrcamentoAprovado, v),
+    txOrcamentoAprovadoFaturados:  porVendedor(allData.value.txOrcamentoAprovadoFaturados, v),
+    txOrcamentoAprovadoReprovados: porVendedor(allData.value.txOrcamentoAprovadoReprovados, v),
   }
 })
 
+function porVendedor(list, vendedor) {
+  const alvo = normalizeName(vendedor)
+  return list.filter(l => normalizeName(l.responsavel) === alvo)
+}
+
 // ─── KPIs derivados ────────────────────────────────────────────
 const kpis = computed(() => {
-  const { novosNegocios, negociosGanhos, negociosPerdidos, negociosAndamento, novasPropostas } = filtered.value
+  const {
+    novosNegocios, negociosGanhos, negociosPerdidos, negociosAndamento,
+    novosContatos, novosOrcamentosAprovados,
+  } = filtered.value
 
   const ganhos   = negociosGanhos.length
   const perdidos = negociosPerdidos.length
@@ -694,7 +845,6 @@ const kpis = computed(() => {
 
   const valorTotal  = negociosGanhos.reduce((s, l) => s + (Number(l.valorPedido) || 0), 0)
   const ticketMedio = ganhos > 0 ? valorTotal / ganhos : 0
-  const taxa        = novos > 0 ? ((ganhos / novos) * 100).toFixed(1) + '%' : '—'
 
   const now = new Date().getTime()
   const andamentoAtrasados = negociosAndamento.filter(l => {
@@ -703,8 +853,14 @@ const kpis = computed(() => {
     return new Date(l.proximoContato).getTime() < now
   }).length
 
-  const valorPropostasGeradas = novasPropostas.reduce((acc, l) => acc + (Number(l.valor) || 0), 0)
-  const qtdPropostasGeradas = novasPropostas.length
+  const valorNovos     = novosNegocios.reduce((s, l) => s + pickValor(l), 0)
+  const valorAndamento = negociosAndamento.reduce((s, l) => s + pickValor(l), 0)
+  const valorAprovados = novosOrcamentosAprovados.reduce((s, l) => s + l._valor, 0)
+
+  // Só entram na média os negócios com as duas datas coerentes
+  const diasAprovacao = novosOrcamentosAprovados
+    .map(l => l._diasAteFase)
+    .filter(d => d !== null)
 
   return {
     novos,
@@ -712,11 +868,18 @@ const kpis = computed(() => {
     perdidos,
     andamento:  negociosAndamento.length,
     andamentoAtrasados,
-    taxa,
+    valorAndamento,
     valorTotal,
     ticketMedio,
-    valorPropostasGeradas,
-    qtdPropostasGeradas,
+    valorNovos,
+    contatos:  novosContatos.length,
+    aprovados: novosOrcamentosAprovados.length,
+    valorAprovados,
+    tempoMedioAprovacao: formatDias(
+      diasAprovacao.length
+        ? diasAprovacao.reduce((s, d) => s + d, 0) / diasAprovacao.length
+        : null
+    ),
   }
 })
 
@@ -725,6 +888,79 @@ const kpis = computed(() => {
 const andamentoDetalhe = computed(() =>
   agruparPorFase(filtered.value.negociosAndamento, { valorDe: l => l.valorOrcamento })
 )
+
+// ─── Taxas de conversão por safra ──────────────────────────────
+// Cada array é uma safra: o backend recorta o denominador pelo período
+// filtrado (data de criação nas duas primeiras, data da primeira aprovação nas
+// duas últimas) e traz o desfecho junto, mesmo que ele tenha acontecido depois
+// do fim do período. Por isso a conta é feita dentro da própria lista e não
+// cruzando com os outros KPIs da tela.
+
+// Regra do negócio: se não está reprovado, conta como faturado. Uso o helper de
+// fases em vez de comparar com a string 'REPROVADO' para que variações do CRM
+// ("DESQUALIFICADO", "PERDIDO") também caiam no lado da perda.
+const foiFaturado = l => !isFasePerdida(l.faseAtual)
+
+function montaTaxa(total, parte) {
+  return { total, parte, pct: total > 0 ? (parte / total) * 100 : null }
+}
+
+const taxasConversao = computed(() => {
+  const f = filtered.value
+  const novosFat   = f.txNovosFaturados
+  const novosAprov = f.txNovosOrcamentoAprovado
+  const aprovFat   = f.txOrcamentoAprovadoFaturados
+  const aprovRep   = f.txOrcamentoAprovadoReprovados
+
+  return [
+    {
+      key: 'novos-faturados',
+      titulo: 'Novos Orçamentos → Faturados',
+      sub: 'Da safra criada no período, quanto virou faturamento.',
+      rotulo: 'faturados',
+      cor: '#43a047',
+      destaque: true,
+      ...montaTaxa(novosFat.length, novosFat.filter(foiFaturado).length),
+    },
+    {
+      key: 'novos-aprovados',
+      titulo: 'Novos Orçamentos → Aprovados',
+      sub: 'Da safra criada no período, quanto chegou a ser aprovado ao menos uma vez.',
+      rotulo: 'aprovados',
+      cor: '#26a69a',
+      destaque: false,
+      ...montaTaxa(
+        novosAprov.length,
+        novosAprov.filter(l => !!l.primeiraVezOrcamentoAprovado).length
+      ),
+    },
+    {
+      key: 'aprovados-faturados',
+      titulo: 'Aprovados → Faturados',
+      sub: 'Da safra aprovada no período, quanto fechou de fato.',
+      rotulo: 'faturados',
+      cor: '#66bb6a',
+      destaque: true,
+      ...montaTaxa(aprovFat.length, aprovFat.filter(foiFaturado).length),
+    },
+    {
+      key: 'aprovados-reprovados',
+      titulo: 'Aprovados → Reprovados',
+      sub: 'Da safra aprovada no período, quanto se perdeu depois do aceite. Aqui, quanto menor melhor.',
+      rotulo: 'reprovados',
+      cor: '#ef5350',
+      destaque: true,
+      ...montaTaxa(aprovRep.length, aprovRep.filter(l => isFasePerdida(l.faseAtual)).length),
+    },
+  ]
+})
+
+const periodoSafra = computed(() => {
+  const { startDate, endDate } = props.filters
+  if (!startDate || !endDate) return 'período completo'
+  const fmt = iso => parseLocalDate(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return `${fmt(startDate)} — ${fmt(endDate)}`
+})
 
 // ─── Ranking de Vendedores ──────────────────────────────────
 const rankingVendedores = computed(() => {
@@ -872,6 +1108,9 @@ const chartSpeedometerData = computed(() => {
 const speedometerOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  // Sem padding o Chart.js usa a altura inteira da caixa como raio, e o arco
+  // encosta na borda de cima. O padding é o que define a folga do velocímetro.
+  layout: { padding: { top: 6, left: 6, right: 6, bottom: 8 } },
   plugins: {
     legend: { display: false },
     tooltip: {
@@ -889,6 +1128,17 @@ const speedometerOptions = {
 function formatCurrency(value) {
   if (!value) return 'R$ —'
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatPct(pct) {
+  if (pct === null || !Number.isFinite(pct)) return '—'
+  return pct.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'
+}
+
+function formatDias(dias) {
+  if (dias === null || !Number.isFinite(dias)) return '—'
+  if (dias < 1) return 'menos de 1 dia'
+  return `${dias.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} dias`
 }
 
 
@@ -948,31 +1198,6 @@ function buildAccSeries(leads, dateField, valueField = null) {
 }
 
 // ─── Gráficos ──────────────────────────────────────────────────
-const chartPropostas = computed(() => {
-  const propsList = filtered.value.novasPropostas
-  
-  const withDate = propsList.map(l => ({
-    ...l,
-    dataGeracao: l.dataProposta || l.criadoEm || new Date().toISOString(),
-    valorProposta: Number(l.valor) || 0
-  }))
-
-  const { labels, values } = buildAccSeries(withDate, 'dataGeracao', 'valorProposta')
-
-  return {
-    labels,
-    datasets: [
-      {
-        label: 'Valor acumulado (Propostas)',
-        data: values,
-        borderColor: '#9C27B0',
-        backgroundColor: 'rgba(156, 39, 176, 0.12)',
-        fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 6,
-      }
-    ],
-  }
-})
-
 const chartValor = computed(() => {
   const withDate = filtered.value.negociosGanhos.map(l => ({
     ...l,
@@ -1079,7 +1304,7 @@ const funnelChartOptions = {
       bodyColor: '#ccc',
       padding: 10,
       callbacks: {
-        label: ctx => ` ${ctx.raw} negócio(s)`,
+        label: ctx => ` ${ctx.raw} orçamento(s)`,
       }
     },
     datalabels: {
@@ -1095,31 +1320,37 @@ const funnelChartOptions = {
   }
 }
 
-// ─── Seção 4: Canais de Venda ────────────────────────────────────
-const canaisVenda = computed(() => {
+// ─── Seção 4: Oportunidades por Origem ───────────────────────────
+const isFaturadas = computed(() => modoOportunidades.value === 'faturadas')
+
+const oportunidadesPorOrigem = computed(() => {
+  const lista = isFaturadas.value
+    ? filtered.value.negociosGanhos
+    : filtered.value.negociosPerdidos
+
   const map = {}
-  filtered.value.negociosGanhos.forEach(l => {
+  lista.forEach(l => {
     const canal = buildOrigemKey(l, canaisIncludeMedium.value)
     if (!map[canal]) map[canal] = { count: 0, value: 0 }
     map[canal].count += 1
     map[canal].value += (Number(l.valorPedido) || 0)
   })
 
-  const entries = Object.entries(map).sort((a, b) => b[1].value - a[1].value)
-  const max = entries[0]?.[1].value ?? 1
+  // Faturadas rankeiam por valor (é o que importa na venda fechada); perdidas
+  // não carregam valor de pedido, então rankeiam por volume
+  const peso = isFaturadas.value ? (d => d.value) : (d => d.count)
+
+  const entries = Object.entries(map).sort((a, b) => peso(b[1]) - peso(a[1]))
+  const max = entries.length ? peso(entries[0][1]) : 0
   return entries.map(([label, data]) => ({
     label,
     count: data.count,
     value: data.value,
-    pct: max > 0 ? Math.round((data.value / max) * 100) : 0
+    pct: max > 0 ? Math.round((peso(data) / max) * 100) : 0
   }))
 })
 
-const topCanal = computed(() => {
-  return canaisVenda.value.length ? canaisVenda.value[0] : null
-})
-
-// Novos Negócios por Origem (utmSource / utmMedium opcional)
+// Novos Orçamentos por Origem (utmSource / utmMedium opcional)
 function buildOrigemKey(l, includeMedium) {
   const src = formatSource(l.utmSource)
   if (!includeMedium) return src
@@ -1213,7 +1444,7 @@ const COLS = {
     { key: 'utmSource',    label: 'Fonte' },
     { key: 'utmCampaing',  label: 'Campanha' },
     { key: 'faseAtual',    label: 'Fase' },
-    { key: 'valor',        label: 'Valor Orç.', isCurrency: true },
+    { key: 'valorOrcamento', label: 'Valor Orç.', isCurrency: true },
     { key: 'dataProposta', label: 'Data Proposta', isDate: true },
     { key: 'criadoEm',    label: 'Criado em', isDate: true },
   ],
@@ -1242,13 +1473,34 @@ const COLS = {
     { key: 'proximoContato',    label: 'Próximo Contato', isDate: true },
     { key: 'criadoEm',         label: 'Criado em', isDate: true },
   ],
+  contatos: [
+    { key: 'responsavel',   label: 'Vendedor' },
+    { key: 'nomeLead',      label: 'Lead' },
+    { key: 'utmSource',     label: 'Fonte' },
+    { key: 'utmCampaing',   label: 'Campanha' },
+    { key: 'clienteDaCasa', label: 'Cliente da Casa' },
+    { key: 'criadoEm',      label: 'Criado em', isDate: true },
+    { key: '_dataFase',     label: 'Entrou em contato', isDate: true },
+  ],
+  aprovados: [
+    { key: 'responsavel',   label: 'Vendedor' },
+    { key: 'nomeLead',      label: 'Lead' },
+    { key: 'utmSource',     label: 'Fonte' },
+    { key: 'utmCampaing',   label: 'Campanha' },
+    { key: '_valor',        label: 'Valor Orç.', isCurrency: true },
+    { key: 'criadoEm',      label: 'Criado em', isDate: true },
+    { key: '_dataFase',     label: 'Aprovado em', isDate: true },
+    { key: '_diasAteFase',  label: 'Dias até aprovar', isNumber: true },
+  ],
 }
 
 const META = {
-  novos:     { title: 'Novos Negócios',     icon: 'bi bi-briefcase-fill', iconStyle: 'background:rgba(30,136,229,0.12);color:#42a5f5' },
-  ganhos:    { title: 'Negócios Ganhos',    icon: 'bi bi-trophy-fill',    iconStyle: 'background:rgba(67,160,71,0.12);color:#66bb6a' },
-  perdidos:  { title: 'Negócios Perdidos',  icon: 'bi bi-x-circle-fill', iconStyle: 'background:rgba(229,57,53,0.12);color:#ef5350' },
-  andamento: { title: 'Negócios em Aberto', icon: 'bi bi-hourglass-split', iconStyle: 'background:rgba(255,167,38,0.12);color:#ffa726' },
+  novos:     { title: 'Novos Orçamentos',      icon: 'bi bi-briefcase-fill', iconStyle: 'background:rgba(30,136,229,0.12);color:#42a5f5' },
+  ganhos:    { title: 'Orçamentos Faturados',  icon: 'bi bi-trophy-fill',    iconStyle: 'background:rgba(67,160,71,0.12);color:#66bb6a' },
+  perdidos:  { title: 'Orçamentos Reprovados', icon: 'bi bi-x-circle-fill', iconStyle: 'background:rgba(229,57,53,0.12);color:#ef5350' },
+  andamento: { title: 'Orçamentos em Aberto', icon: 'bi bi-hourglass-split', iconStyle: 'background:rgba(255,167,38,0.12);color:#ffa726' },
+  contatos:  { title: 'Em Contato',          icon: 'bi bi-chat-dots-fill', iconStyle: 'background:rgba(38,198,218,0.12);color:#26c6da' },
+  aprovados: { title: 'Orçamentos Aprovados', icon: 'bi bi-check2-circle', iconStyle: 'background:rgba(38,166,154,0.12);color:#26a69a' },
 }
 
 const SOURCE_MAP = {
@@ -1256,6 +1508,8 @@ const SOURCE_MAP = {
   ganhos:    'negociosGanhos',
   perdidos:  'negociosPerdidos',
   andamento: 'negociosAndamento',
+  contatos:  'novosContatos',
+  aprovados: 'novosOrcamentosAprovados',
 }
 
 const modal = reactive({
@@ -1298,7 +1552,8 @@ const modalFiltered = computed(() => {
     list.sort((a, b) => {
       let va = a[modal.sortKey] ?? ''
       let vb = b[modal.sortKey] ?? ''
-      if (col?.isDate || col?.isCurrency) { va = Number(new Date(va)) || 0; vb = Number(new Date(vb)) || 0 }
+      if (col?.isDate) { va = Number(new Date(va)) || 0; vb = Number(new Date(vb)) || 0 }
+      else if (col?.isCurrency || col?.isNumber) { va = Number(va) || 0; vb = Number(vb) || 0 }
       else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase() }
       return modal.sortDir === 'asc' ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1)
     })
@@ -1408,7 +1663,7 @@ function exportToExcel() {
 /* ── KPIs ─────────────────────────────────────────────────── */
 .kpi-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 @media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
@@ -1517,6 +1772,38 @@ function exportToExcel() {
   font-weight: 500;
   color: var(--color-placeholder);
 }
+/* ── Velocímetro da meta ──────────────────────────────────── */
+/* A caixa tem tamanho fixo e o canvas fica absoluto dentro dela: assim o
+   redimensionamento responsivo do Chart.js nunca realimenta a altura do card.
+   A folga do arco vem do layout.padding em speedometerOptions. */
+.speedometer-chart {
+  position: relative;
+  width: 176px;
+  height: 92px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+.speedometer-canvas { position: absolute; inset: 0; }
+.speedometer-value {
+  position: absolute;
+  left: 0; right: 0; bottom: 8px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-heading);
+  pointer-events: none;
+}
+.speedometer-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+  text-align: center;
+  color: var(--color-placeholder);
+}
+
 .value-amount {
   font-size: 22px;
   font-weight: 800;
@@ -2012,6 +2299,54 @@ function exportToExcel() {
   background: var(--color-bg);
   border: 1px solid var(--color-card-border);
 }
+
+/* ── Taxas de Conversão por Safra ────────────────────────── */
+.conversao-section {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.conversao-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 14px;
+}
+@media (max-width: 1100px) { .conversao-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .conversao-grid { grid-template-columns: 1fr; } }
+
+.conversao-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.conversao-card--destaque { border-color: rgba(216,139,73,0.45); }
+
+.conversao-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+.conversao-titulo {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+.conversao-star { font-size: 10px; color: #D88B49; flex-shrink: 0; margin-top: 2px; }
+
+.conversao-pct { font-size: 28px; font-weight: 800; line-height: 1; }
+.conversao-detalhe { font-size: 11px; color: var(--color-text); }
+.conversao-detalhe strong { font-weight: 700; color: var(--color-heading); }
+.conversao-sub { font-size: 11px; line-height: 1.4; color: var(--color-placeholder); }
 
 /* ── Grid Análises Inferiores ────────────────────────────── */
 .bottom-analytics-grid {
