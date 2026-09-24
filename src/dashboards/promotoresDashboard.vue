@@ -257,20 +257,13 @@
             </div>
           </div>
 
-          <div class="regras-condicao">
-            <b>Meta mínima:</b> {{ META_MINIMA }} indicações por mês. O painel mostra mês a mês quem
-            bateu a meta, mas ela não bloqueia pontos — toda etapa alcançada conta no ranking.
-          </div>
-
           <span class="section-label">Como este painel aplica as regras</span>
           <ul class="regras-lista">
-            <li><b class="c-e1">E1</b> <span>Card criado no Board (fase Indicação). Indicação desqualificada: pontua os 150 pts, pois foi registrada.</span></li>
+            <li><b class="c-e1">E1</b> <span>Card criado no Board (fase Indicação). Indicação desqualificada: pontua os 150 pts, pois foi registrada. Orçamento que existe só no Funil, sem card no Board, também ganha E1 e E2.</span></li>
             <li><b class="c-e2">E2</b> <span>Card entrou em "Qualificado" no Board (ou já existe no Funil de Vendas).</span></li>
             <li><b class="c-e3">E3</b> <span>Card criado no Funil de Vendas (fase Orçamento), mesmo que depois seja reprovado.</span></li>
-            <li><b class="c-e4">E4</b> <span>Conta em: <b>Orçamento aprovado (ou faturado)</b>. Um "Reprovado" posterior à aprovação anula a venda.</span></li>
+            <li><b class="c-e4">E4</b> <span>Conta em: <b>Orçamento faturado</b>. Um "Reprovado" posterior ao faturamento anula a venda. Se o mesmo orçamento tiver mais de uma venda registrada, vale a de maior valor.</span></li>
             <li><b>R$</b> <span>Bônus pela faixa do "Valor Fechado". Venda sem valor informado: bônus fica pendente (0 pts até preencher).</span></li>
-            <li><b class="c-muted">M</b> <span>Cada etapa conta no mês em que aconteceu. A meta mensal é acompanhada por mês (verde = cumprida, vermelho = abaixo), sem bloquear pontos.</span></li>
-            <li><b class="c-muted">ID</b> <span>Board e Funil são ligados pelo nome da empresa + técnico. O nome do técnico precisa ser o mesmo nos dois quadros — grafias diferentes aparecem como técnicos separados.</span></li>
           </ul>
         </div>
       </div>
@@ -730,7 +723,6 @@ function faixaLabel(i) {
 .c-e2 { color: #3b7bd6; }
 .c-e3 { color: #2e9a5b; }
 .c-e4 { color: #e53935; }
-.c-muted { color: #9aa0a8; }
 
 /* ── KPIs ─────────────────────────────────────────────────────── */
 .kpi-row {
@@ -1175,16 +1167,6 @@ function faixaLabel(i) {
 .faixa-row--topo,
 .faixa-row--topo:nth-child(even) { background: #111; color: #fff; }
 .faixa-row--topo b { color: #ff4d4f; }
-
-.regras-condicao {
-  background: #fbefe2;
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 14px;
-  line-height: 1.55;
-  color: #6b5a44;
-}
-.regras-condicao b { color: #4a3b27; }
 
 .regras-lista {
   list-style: none;
