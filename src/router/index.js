@@ -55,10 +55,11 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+  const loggedIn = authStore.ensureValidSession()
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.meta.requiresAuth && !loggedIn) {
     next('/login')
-  } else if (to.path === '/login' && authStore.isAuthenticated) {
+  } else if (to.path === '/login' && loggedIn) {
     next('/')
   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
     next('/')

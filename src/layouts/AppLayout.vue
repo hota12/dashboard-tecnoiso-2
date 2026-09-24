@@ -469,6 +469,7 @@ onMounted(async () => {
   if (saved !== null) sidebarCollapsed.value = saved === 'true'
   // Sempre re-valida o usuário com a API no carregamento da página
   if (authStore.token) {
+    authStore.scheduleExpiry()
     authStore.fetchMe() // sem await — roda em background, já há dados no localStorage
   }
   await dashboardStore.fetchDashboards()
