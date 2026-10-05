@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Metas de Faturamento</h1>
+        <h1 class="page-title">Metas</h1>
         <p class="page-subtitle">Gerencie as metas mensais por vendedor</p>
       </div>
 
@@ -15,6 +15,35 @@
         <span class="year-display">{{ goalsStore.selectedYear }}</span>
         <button class="btn btn-secondary btn-icon" @click="changeYear(1)">
           <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Type selector -->
+    <div class="type-selector">
+      <button
+        v-for="t in goalTypes"
+        :key="t.value"
+        class="type-pill"
+        :class="{ active: currentTypeConfig.value === t.value }"
+        @click="selectType(t.value)"
+      >
+        <i class="bi" :class="t.icon"></i>
+        <span>{{ t.label }}</span>
+      </button>
+    </div>
+
+    <!-- Level selector (tipos com mais de um nível de meta) -->
+    <div v-if="currentTypeConfig.levels" class="level-selector">
+      <span class="level-caption">Nível:</span>
+      <div class="level-toggle">
+        <button
+          v-for="l in currentTypeConfig.levels"
+          :key="l.value"
+          :class="{ active: goalsStore.selectedType === l.value }"
+          @click="selectType(l.value)"
+        >
+          {{ l.label }}
         </button>
       </div>
     </div>
@@ -61,7 +90,7 @@
           <div class="user-goals-total">
             <span class="text-xs text-muted">Total anual:</span>
             <span class="font-bold" style="color:var(--color-btn-bg)">
-              {{ formatCurrency(userAnnualTotal(user.id)) }}
+              {{ formatGoalValue(userAnnualTotal(user.id), currentTypeConfig.format) }}
             </span>
           </div>
         </div>
@@ -81,10 +110,10 @@
                 @keydown.enter="(e) => { e.target.blur() }"
                 type="number"
                 class="form-input month-input"
-                placeholder="0,00"
+                :placeholder="currentTypeConfig.placeholder"
                 :disabled="!authStore.isAdmin"
                 min="0"
-                step="0.01"
+                :step="currentTypeConfig.step"
               />
               <div
                 v-if="isSaving(user.id, month.value)"
@@ -105,6 +134,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useGoalsStore } from '@/stores/goals'
 import { useUsersStore } from '@/stores/users'
 import { useAuthStore } from '@/stores/auth'
+import { GOAL_TYPES, getGoalTypeConfig, formatGoalValue } from '@/constants/goalTypes'
 
 const goalsStore = useGoalsStore()
 const usersStore = useUsersStore()
@@ -115,6 +145,9 @@ const successMessage = ref('')
 const savingMap = ref({})
 
 const users = computed(() => usersStore.users)
+
+const goalTypes = GOAL_TYPES
+const currentTypeConfig = computed(() => getGoalTypeConfig(goalsStore.selectedType))
 
 const months = [
   { value: '01', label: 'Jan' },
@@ -136,21 +169,35 @@ function getGoalValue(userId, month) {
   return goal?.value || ''
 }
 
+/** Total anual do usuário no tipo selecionado: soma os valores exibidos nos inputs. */
 function userAnnualTotal(userId) {
-  return goalsStore.goals
-    .filter((g) => String(g.userId) === String(userId) && g.year === goalsStore.selectedYear)
-    .reduce((sum, g) => sum + (parseFloat(g.value) || 0), 0)
+  return months.reduce(
+    (sum, month) => sum + (parseFloat(getGoalValue(userId, month.value)) || 0),
+    0
+  )
+}
+
+function selectType(type) {
+  goalsStore.setType(type)
+}
+
+// A chave inclui o tipo: trocar de aba durante um salvamento não pode travar
+// nem mostrar o spinner no mesmo mês de outro tipo de meta.
+function savingKey(userId, month) {
+  return `${goalsStore.selectedType}-${userId}-${month}`
 }
 
 function isSaving(userId, month) {
-  return !!savingMap.value[`${userId}-${month}`]
+  return !!savingMap.value[savingKey(userId, month)]
 }
 
 async function saveGoal(userId, month, value) {
   if (!authStore.isAdmin) return
-  const existing = goalsStore.getGoalByUserMonthYear(userId, month, goalsStore.selectedYear)
+  if (isSaving(userId, month)) return
+  const type = goalsStore.selectedType
+  const key = savingKey(userId, month)
+  const existing = goalsStore.getGoalByUserMonthYear(userId, month, goalsStore.selectedYear, type)
   const numValue = parseFloat(value) || 0
-  const key = `${userId}-${month}`
   savingMap.value[key] = true
 
   try {
@@ -161,7 +208,7 @@ async function saveGoal(userId, month, value) {
         year: goalsStore.selectedYear,
         month,
         value: numValue,
-        type: 'faturamento',
+        type,
       })
     } else if (numValue > 0) {
       await goalsStore.createGoal({
@@ -169,7 +216,7 @@ async function saveGoal(userId, month, value) {
         year: goalsStore.selectedYear,
         month,
         value: numValue,
-        type: 'faturamento',
+        type,
       })
     }
     showSuccess('Meta salva!')
@@ -183,14 +230,6 @@ async function saveGoal(userId, month, value) {
 function changeYear(delta) {
   const newYear = parseInt(goalsStore.selectedYear) + delta
   goalsStore.setYear(newYear)
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-  }).format(value)
 }
 
 function showSuccess(msg) {
@@ -243,6 +282,86 @@ onMounted(async () => {
   font-weight: 800;
   min-width: 70px;
   text-align: center;
+}
+
+/* Type selector */
+.type-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-full);
+  background: var(--color-card-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.type-pill:hover {
+  border-color: var(--color-btn-bg);
+}
+
+.type-pill.active {
+  background: var(--color-btn-bg);
+  border-color: var(--color-btn-bg);
+  color: #fff;
+  box-shadow: var(--shadow-btn);
+}
+
+/* Level selector */
+.level-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -8px 0 24px;
+}
+
+.level-caption {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-placeholder);
+}
+
+.level-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-full);
+  background: var(--color-card-bg);
+}
+
+.level-toggle button {
+  padding: 5px 14px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-placeholder);
+  font-family: var(--font-family);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.level-toggle button:hover {
+  color: var(--color-text);
+}
+
+.level-toggle button.active {
+  background: var(--color-text);
+  color: var(--color-bg);
 }
 
 /* Skeletons */

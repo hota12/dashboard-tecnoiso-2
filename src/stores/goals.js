@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/config/api'
+import { DEFAULT_GOAL_TYPE } from '@/constants/goalTypes'
 
 export const useGoalsStore = defineStore('goals', {
   state: () => ({
@@ -7,6 +8,7 @@ export const useGoalsStore = defineStore('goals', {
     loading: false,
     error: null,
     selectedYear: new Date().getFullYear().toString(),
+    selectedType: DEFAULT_GOAL_TYPE,
   }),
 
   getters: {
@@ -14,9 +16,14 @@ export const useGoalsStore = defineStore('goals', {
       return state.goals.filter((g) => g.year === state.selectedYear)
     },
 
-    getGoalByUserMonthYear: (state) => (userId, month, year) => {
+    getGoalByUserMonthYear: (state) => (userId, month, year, type) => {
+      const targetType = type || state.selectedType
       return state.goals.find(
-        (g) => String(g.userId) === String(userId) && g.month === month && g.year === (year || state.selectedYear)
+        (g) =>
+          String(g.userId) === String(userId) &&
+          g.month === month &&
+          g.year === (year || state.selectedYear) &&
+          (g.type || DEFAULT_GOAL_TYPE) === targetType
       )
     },
   },
@@ -82,6 +89,10 @@ export const useGoalsStore = defineStore('goals', {
 
     setYear(year) {
       this.selectedYear = year.toString()
+    },
+
+    setType(type) {
+      this.selectedType = type
     },
   },
 })

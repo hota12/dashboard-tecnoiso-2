@@ -702,6 +702,7 @@ const canaisIncludeMedium = ref(false)
 const modoOportunidades   = ref('faturadas')
 
 import { useGoalsStore } from '@/stores/goals'
+import { DEFAULT_GOAL_TYPE } from '@/constants/goalTypes'
 import { useUsersStore } from '@/stores/users'
 
 const goalsStore = useGoalsStore()
@@ -1050,8 +1051,10 @@ const metaDataSeries = computed(() => {
     const key = `${year}-${monthStr}`
     
     if (monthGoalCache[key] === undefined) {
+      // Só a meta de faturamento entra aqui; os demais tipos (leads, oportunidades) não são em R$
       const monthGoals = goalsStore.goals.filter(
-        g => userIds.includes(String(g.userId)) && g.year === year && g.month === monthStr
+        g => userIds.includes(String(g.userId)) && g.year === year && g.month === monthStr &&
+          (g.type || DEFAULT_GOAL_TYPE) === DEFAULT_GOAL_TYPE
       )
       const sumMonth = monthGoals.reduce((acc, g) => acc + (parseFloat(g.value) || 0), 0)
       const daysInThisMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0).getDate()

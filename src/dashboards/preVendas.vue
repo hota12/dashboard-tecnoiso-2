@@ -98,6 +98,80 @@
         <span class="taxa-value">{{ taxaConversao }}</span>
       </div>
 
+      <!-- Meta de Qualificações (Meta / Mega Meta / Ultra Meta) -->
+      <div class="origem-card">
+        <div class="origem-header">
+          <span class="origem-title">
+            <i class="bi bi-bullseye"></i>
+            Meta de Qualificações
+            <span class="tooltip-icon" data-tooltip="Leads ganhos no período, por vendedor sorteado, contra a meta cheia dos meses do filtro.">
+              <i class="bi bi-info-circle"></i>
+            </span>
+          </span>
+          <span v-if="periodLabel" class="badge badge-dark">{{ periodLabel }}</span>
+        </div>
+
+        <div v-if="!qualifRows.length" class="origem-empty">
+          Nenhuma meta de qualificações cadastrada para o período
+        </div>
+
+        <div v-else class="qualif-list">
+          <div
+            v-for="row in qualifRows"
+            :key="row.key"
+            class="qualif-row"
+            :class="{ 'qualif-row-total': row.isTotal }"
+          >
+            <div class="qualif-head">
+              <span class="qualif-name">{{ row.name }}</span>
+              <span class="qualif-status">
+                <span
+                  v-if="row.current"
+                  class="badge qualif-badge"
+                  :style="{ background: row.current.color }"
+                >
+                  <i class="bi bi-check-lg"></i> {{ row.current.label }}
+                </span>
+                <span class="qualif-count">{{ row.realizado.toLocaleString('pt-BR') }}</span>
+              </span>
+            </div>
+
+            <div class="qualif-track">
+              <div
+                class="qualif-fill"
+                :style="{ width: row.fillPct + '%', background: row.current?.color }"
+              ></div>
+              <span
+                v-for="l in row.levels"
+                :key="l.value"
+                class="qualif-mark"
+                :style="{ left: l.pos + '%' }"
+              ></span>
+            </div>
+
+            <div class="qualif-foot">
+              <span class="qualif-levels">
+                <span
+                  v-for="l in row.levels"
+                  :key="l.value"
+                  class="qualif-level"
+                  :class="{ reached: l.reached }"
+                >
+                  <span class="origem-dot" :style="{ background: l.color }"></span>
+                  {{ l.label }} {{ l.target.toLocaleString('pt-BR') }}
+                </span>
+              </span>
+              <span class="qualif-next">
+                <template v-if="row.next">
+                  Faltam {{ row.faltam.toLocaleString('pt-BR') }} para a {{ row.next.label }}
+                </template>
+                <template v-else>Todos os níveis batidos</template>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Gráficos de linha -->
       <div class="charts-row">
         <div class="chart-card">
@@ -370,9 +444,12 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { Line } from 'vue-chartjs'
 import * as XLSX from 'xlsx'
+import { useGoalsStore } from '@/stores/goals'
+import { useUsersStore } from '@/stores/users'
+import { getGoalTypeConfig } from '@/constants/goalTypes'
 import {
   Chart as ChartJS,
   CategoryScale, LinearScale,
@@ -419,6 +496,124 @@ const taxaConversao = computed(() => {
   const total = ganhos + perdidos
   if (total === 0) return '—'
   return ((ganhos / total) * 100).toFixed(1) + '%'
+})
+
+// ── Meta de Qualificações (Meta / Mega Meta / Ultra Meta) ────────
+const goalsStore = useGoalsStore()
+const usersStore = useUsersStore()
+
+onMounted(() => {
+  usersStore.fetchUsers()
+  goalsStore.fetchGoals()
+})
+
+const QUALIF_LEVELS = getGoalTypeConfig('qualificacoes').levels
+
+// Meses (YYYY-MM) cobertos pelo filtro. Parse manual da string ISO para
+// evitar deslocamento de fuso horário.
+const periodMonths = computed(() => {
+  const { startDate, endDate } = props.filters
+  if (!startDate || !endDate) return []
+  const [sy, sm] = startDate.split('-').map(Number)
+  const [ey, em] = endDate.split('-').map(Number)
+  if (!sy || !sm || !ey || !em) return []
+  const months = []
+  let y = sy, m = sm
+  while (y < ey || (y === ey && m <= em)) {
+    months.push(`${y}-${String(m).padStart(2, '0')}`)
+    if (++m > 12) { m = 1; y++ }
+  }
+  return months
+})
+
+const periodLabel = computed(() => {
+  const months = periodMonths.value
+  if (!months.length) return ''
+  const fmt = ym => `${ym.slice(5)}/${ym.slice(0, 4)}`
+  const first = fmt(months[0])
+  const last = fmt(months[months.length - 1])
+  return first === last ? first : `${first} – ${last}`
+})
+
+// Meta de cada nível por usuário, somando os meses do período:
+// { [userId]: { [type do nível]: total } }
+const qualifGoalsByUser = computed(() => {
+  const months = periodMonths.value
+  const levelTypes = QUALIF_LEVELS.map(l => l.value)
+  // Uma meta por usuário/mês/nível, mesmo com linhas duplicadas no backend
+  const unique = new Map()
+  for (const g of goalsStore.goals) {
+    if (!levelTypes.includes(g.type)) continue
+    const monthKey = `${g.year}-${String(g.month).padStart(2, '0')}`
+    if (!months.includes(monthKey)) continue
+    unique.set(`${g.userId}|${monthKey}|${g.type}`, g)
+  }
+  const byUser = {}
+  for (const g of unique.values()) {
+    const uid = String(g.userId)
+    byUser[uid] ??= {}
+    byUser[uid][g.type] = (byUser[uid][g.type] || 0) + (parseFloat(g.value) || 0)
+  }
+  return byUser
+})
+
+// Normaliza nome para casar o vendedor sorteado do CRM com o usuário do sistema
+function normalizeName(str) {
+  return String(str ?? '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+function buildQualifRow(base, realizado, targets) {
+  const levels = QUALIF_LEVELS
+    .map(l => ({ ...l, target: targets[l.value] || 0 }))
+    .filter(l => l.target > 0)
+  if (!levels.length) return null
+  const max = Math.max(...levels.map(l => l.target))
+  const reached = levels.filter(l => realizado >= l.target)
+  const next = levels.find(l => realizado < l.target) ?? null
+  return {
+    ...base,
+    realizado,
+    levels: levels.map(l => ({ ...l, pos: (l.target / max) * 100, reached: realizado >= l.target })),
+    fillPct: Math.min((realizado / max) * 100, 100),
+    current: reached[reached.length - 1] ?? null,
+    next,
+    faltam: next ? next.target - realizado : 0,
+  }
+}
+
+// Uma linha por pessoa com meta no período + o total do time no topo
+const qualifRows = computed(() => {
+  const goalsByUser = qualifGoalsByUser.value
+  const ganhosPorNome = {}
+  data.value.leadsGanhos.forEach(l => {
+    const nome = normalizeName(l.vendedorSorteado)
+    ganhosPorNome[nome] = (ganhosPorNome[nome] ?? 0) + 1
+  })
+
+  const pessoas = usersStore.users
+    .filter(u => goalsByUser[String(u.id)])
+    .map(u => buildQualifRow(
+      { key: String(u.id), name: u.name },
+      ganhosPorNome[normalizeName(u.name)] ?? 0,
+      goalsByUser[String(u.id)],
+    ))
+    .filter(Boolean)
+    .sort((a, b) => b.realizado - a.realizado)
+
+  if (pessoas.length < 2) return pessoas
+
+  const totais = {}
+  pessoas.forEach(p => p.levels.forEach(l => { totais[l.value] = (totais[l.value] || 0) + l.target }))
+  const total = buildQualifRow(
+    { key: 'total', name: 'Total do time', isTotal: true },
+    data.value.leadsGanhos.length,
+    totais,
+  )
+  return [total, ...pessoas]
 })
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -868,6 +1063,50 @@ function exportToExcel() {
 .origem-item-count { font-size: 12px; font-weight: 700; color: var(--color-placeholder); flex-shrink: 0; }
 .origem-bar-track { height: 5px; background: rgba(0,0,0,0.07); border-radius: 99px; overflow: hidden; }
 .origem-bar-fill  { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+
+/* ── Meta de Qualificações ────────────────────────────────────── */
+.qualif-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px 28px;
+}
+.qualif-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.qualif-row-total {
+  grid-column: 1 / -1;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-card-border);
+}
+.qualif-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.qualif-name {
+  font-size: 13px; font-weight: 600; color: var(--color-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.qualif-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.qualif-count { font-size: 18px; font-weight: 800; color: var(--color-text); line-height: 1; }
+.qualif-badge { color: #fff; gap: 4px; font-size: 11px; padding: 2px 8px; }
+.qualif-track {
+  position: relative; height: 8px;
+  background: rgba(0,0,0,0.07); border-radius: 99px;
+}
+.qualif-fill {
+  height: 100%; border-radius: 99px;
+  background: var(--color-placeholder);
+  transition: width 0.5s ease;
+}
+.qualif-mark {
+  position: absolute; top: -3px; bottom: -3px;
+  width: 2px; margin-left: -2px;
+  background: var(--color-text); opacity: 0.35; border-radius: 1px;
+}
+.qualif-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 4px 12px;
+  font-size: 11px; color: var(--color-placeholder);
+}
+.qualif-levels { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.qualif-level { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+.qualif-level.reached { color: var(--color-text); font-weight: 700; }
+.qualif-next { font-weight: 600; }
 
 /* ── Micro toggle ─────────────────────────────────────────────── */
 .micro-toggle {
