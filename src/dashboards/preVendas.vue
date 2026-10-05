@@ -57,7 +57,7 @@
         </div>
 
         <!-- Leads Ganhos -->
-        <div class="kpi-card">
+        <div class="kpi-card kpi-card-goal">
           <div class="kpi-icon" style="background:rgba(67,160,71,0.12);color:#66bb6a">
             <i class="bi bi-trophy-fill"></i>
           </div>
@@ -68,6 +68,31 @@
           <button class="kpi-detail-btn" @click="openModal('ganhos')" data-tooltip="Ver detalhes">
             <i class="bi bi-table"></i>
           </button>
+
+          <!-- Acompanhamento da meta de qualificações (Meta / Mega Meta / Ultra Meta) -->
+          <div class="kpi-goal">
+            <template v-if="qualifTotal">
+              <div class="kpi-goal-head">
+                <span class="kpi-goal-caption">
+                  <i class="bi bi-bullseye"></i> Meta de qualificações
+                  <span class="tooltip-icon" data-tooltip="Leads ganhos no período contra a soma das metas de todos os vendedores nos meses do filtro (meta cheia do mês).">
+                    <i class="bi bi-info-circle"></i>
+                  </span>
+                </span>
+                <span
+                  v-if="qualifTotal.current"
+                  class="badge level-badge"
+                  :style="{ background: qualifTotal.current.color }"
+                >
+                  <i class="bi bi-check-lg"></i> {{ qualifTotal.current.label }}
+                </span>
+              </div>
+              <GoalLevelsBar :progress="qualifTotal" />
+            </template>
+            <span v-else class="kpi-goal-empty">
+              <i class="bi bi-bullseye"></i> Sem meta de qualificações no período
+            </span>
+          </div>
         </div>
 
         <!-- Leads Perdidos -->
@@ -96,80 +121,6 @@
           </span>
         </span>
         <span class="taxa-value">{{ taxaConversao }}</span>
-      </div>
-
-      <!-- Meta de Qualificações (Meta / Mega Meta / Ultra Meta) -->
-      <div class="origem-card">
-        <div class="origem-header">
-          <span class="origem-title">
-            <i class="bi bi-bullseye"></i>
-            Meta de Qualificações
-            <span class="tooltip-icon" data-tooltip="Leads ganhos no período, por vendedor sorteado, contra a meta cheia dos meses do filtro.">
-              <i class="bi bi-info-circle"></i>
-            </span>
-          </span>
-          <span v-if="periodLabel" class="badge badge-dark">{{ periodLabel }}</span>
-        </div>
-
-        <div v-if="!qualifRows.length" class="origem-empty">
-          Nenhuma meta de qualificações cadastrada para o período
-        </div>
-
-        <div v-else class="qualif-list">
-          <div
-            v-for="row in qualifRows"
-            :key="row.key"
-            class="qualif-row"
-            :class="{ 'qualif-row-total': row.isTotal }"
-          >
-            <div class="qualif-head">
-              <span class="qualif-name">{{ row.name }}</span>
-              <span class="qualif-status">
-                <span
-                  v-if="row.current"
-                  class="badge qualif-badge"
-                  :style="{ background: row.current.color }"
-                >
-                  <i class="bi bi-check-lg"></i> {{ row.current.label }}
-                </span>
-                <span class="qualif-count">{{ row.realizado.toLocaleString('pt-BR') }}</span>
-              </span>
-            </div>
-
-            <div class="qualif-track">
-              <div
-                class="qualif-fill"
-                :style="{ width: row.fillPct + '%', background: row.current?.color }"
-              ></div>
-              <span
-                v-for="l in row.levels"
-                :key="l.value"
-                class="qualif-mark"
-                :style="{ left: l.pos + '%' }"
-              ></span>
-            </div>
-
-            <div class="qualif-foot">
-              <span class="qualif-levels">
-                <span
-                  v-for="l in row.levels"
-                  :key="l.value"
-                  class="qualif-level"
-                  :class="{ reached: l.reached }"
-                >
-                  <span class="origem-dot" :style="{ background: l.color }"></span>
-                  {{ l.label }} {{ l.target.toLocaleString('pt-BR') }}
-                </span>
-              </span>
-              <span class="qualif-next">
-                <template v-if="row.next">
-                  Faltam {{ row.faltam.toLocaleString('pt-BR') }} para a {{ row.next.label }}
-                </template>
-                <template v-else>Todos os níveis batidos</template>
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Gráficos de linha -->
@@ -294,9 +245,20 @@
             <div v-for="item in distVendedor" :key="item.label" class="origem-item">
               <div class="origem-item-info">
                 <span class="origem-item-label">{{ item.label }}</span>
-                <span class="origem-item-count">{{ item.count }}</span>
+                <span class="origem-item-status">
+                  <span
+                    v-if="item.meta?.current"
+                    class="badge level-badge"
+                    :style="{ background: item.meta.current.color }"
+                  >
+                    <i class="bi bi-check-lg"></i> {{ item.meta.current.label }}
+                  </span>
+                  <span class="origem-item-count">{{ item.count }}</span>
+                </span>
               </div>
-              <div class="origem-bar-track">
+              <!-- Com meta de qualificações: barra com os níveis; sem meta: barra simples -->
+              <GoalLevelsBar v-if="item.meta" :progress="item.meta" />
+              <div v-else class="origem-bar-track">
                 <div class="origem-bar-fill" style="background:#ab47bc" :style="{ width: item.pct + '%' }"></div>
               </div>
             </div>
@@ -450,6 +412,7 @@ import * as XLSX from 'xlsx'
 import { useGoalsStore } from '@/stores/goals'
 import { useUsersStore } from '@/stores/users'
 import { getGoalTypeConfig } from '@/constants/goalTypes'
+import GoalLevelsBar from '@/components/GoalLevelsBar.vue'
 import {
   Chart as ChartJS,
   CategoryScale, LinearScale,
@@ -526,15 +489,6 @@ const periodMonths = computed(() => {
   return months
 })
 
-const periodLabel = computed(() => {
-  const months = periodMonths.value
-  if (!months.length) return ''
-  const fmt = ym => `${ym.slice(5)}/${ym.slice(0, 4)}`
-  const first = fmt(months[0])
-  const last = fmt(months[months.length - 1])
-  return first === last ? first : `${first} – ${last}`
-})
-
 // Meta de cada nível por usuário, somando os meses do período:
 // { [userId]: { [type do nível]: total } }
 const qualifGoalsByUser = computed(() => {
@@ -561,12 +515,13 @@ const qualifGoalsByUser = computed(() => {
 function normalizeName(str) {
   return String(str ?? '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase()
 }
 
-function buildQualifRow(base, realizado, targets) {
+// Progresso de `realizado` contra os níveis de `targets` ({ [type do nível]: meta })
+function buildQualifProgress(realizado, targets) {
   const levels = QUALIF_LEVELS
     .map(l => ({ ...l, target: targets[l.value] || 0 }))
     .filter(l => l.target > 0)
@@ -575,8 +530,6 @@ function buildQualifRow(base, realizado, targets) {
   const reached = levels.filter(l => realizado >= l.target)
   const next = levels.find(l => realizado < l.target) ?? null
   return {
-    ...base,
-    realizado,
     levels: levels.map(l => ({ ...l, pos: (l.target / max) * 100, reached: realizado >= l.target })),
     fillPct: Math.min((realizado / max) * 100, 100),
     current: reached[reached.length - 1] ?? null,
@@ -585,35 +538,19 @@ function buildQualifRow(base, realizado, targets) {
   }
 }
 
-// Uma linha por pessoa com meta no período + o total do time no topo
-const qualifRows = computed(() => {
-  const goalsByUser = qualifGoalsByUser.value
-  const ganhosPorNome = {}
-  data.value.leadsGanhos.forEach(l => {
-    const nome = normalizeName(l.vendedorSorteado)
-    ganhosPorNome[nome] = (ganhosPorNome[nome] ?? 0) + 1
-  })
+// Usuários com meta de qualificações no período
+const qualifUsers = computed(() =>
+  usersStore.users.filter(u => qualifGoalsByUser.value[String(u.id)])
+)
 
-  const pessoas = usersStore.users
-    .filter(u => goalsByUser[String(u.id)])
-    .map(u => buildQualifRow(
-      { key: String(u.id), name: u.name },
-      ganhosPorNome[normalizeName(u.name)] ?? 0,
-      goalsByUser[String(u.id)],
-    ))
-    .filter(Boolean)
-    .sort((a, b) => b.realizado - a.realizado)
-
-  if (pessoas.length < 2) return pessoas
-
+// Card "Leads Ganhos": total de leads ganhos contra a soma das metas de todos
+const qualifTotal = computed(() => {
   const totais = {}
-  pessoas.forEach(p => p.levels.forEach(l => { totais[l.value] = (totais[l.value] || 0) + l.target }))
-  const total = buildQualifRow(
-    { key: 'total', name: 'Total do time', isTotal: true },
-    data.value.leadsGanhos.length,
-    totais,
-  )
-  return [total, ...pessoas]
+  for (const u of qualifUsers.value) {
+    const metas = qualifGoalsByUser.value[String(u.id)]
+    for (const type in metas) totais[type] = (totais[type] || 0) + metas[type]
+  }
+  return buildQualifProgress(data.value.leadsGanhos.length, totais)
 })
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -753,7 +690,33 @@ function buildFrequency(leads, field, defaultVal = 'Não informado') {
 const origemNovos    = computed(() => buildOrigem(data.value.novosLeads,  includeMediumNovos.value))
 const origemGanhos   = computed(() => buildOrigem(data.value.leadsGanhos, includeMediumGanhos.value))
 const motivoPerdidos = computed(() => buildMotivo(data.value.leadsDesqualificado))
-const distVendedor   = computed(() => buildFrequency(data.value.leadsGanhos, 'vendedorSorteado', 'Sem Vendedor'))
+// Leads ganhos por vendedor; quem tem meta de qualificações ganha a barra de níveis
+const distVendedor = computed(() => {
+  const items = buildFrequency(data.value.leadsGanhos, 'vendedorSorteado', 'Sem Vendedor')
+  if (!qualifUsers.value.length) return items
+
+  const goalsByUser = qualifGoalsByUser.value
+  const ganhosPorNome = {}
+  data.value.leadsGanhos.forEach(l => {
+    const nome = normalizeName(l.vendedorSorteado)
+    ganhosPorNome[nome] = (ganhosPorNome[nome] ?? 0) + 1
+  })
+
+  const pendentes = new Map(qualifUsers.value.map(u => [normalizeName(u.name), u]))
+  const result = items.map(item => {
+    const nome = normalizeName(item.label)
+    const user = pendentes.get(nome)
+    if (!user) return item
+    pendentes.delete(nome)
+    return { ...item, meta: buildQualifProgress(ganhosPorNome[nome], goalsByUser[String(user.id)]) }
+  })
+  // Quem tem meta mas ainda não ganhou nenhum lead também aparece
+  for (const user of pendentes.values()) {
+    const meta = buildQualifProgress(0, goalsByUser[String(user.id)])
+    if (meta) result.push({ label: user.name, count: 0, pct: 0, meta })
+  }
+  return result
+})
 const distClienteCasa = computed(() => buildFrequency(
   filterClienteCasa.value === 'novos' ? data.value.novosLeads : data.value.leadsGanhos,
   'clienteDaCasa', 'Não Informado'
@@ -930,6 +893,27 @@ function exportToExcel() {
   line-height: 1.1;
 }
 
+/* ── Meta dentro do card de KPI ───────────────────────────────── */
+.kpi-card-goal { flex-wrap: wrap; }
+
+.kpi-goal {
+  flex-basis: 100%; width: 100%;
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 4px; padding-top: 12px;
+  border-top: 1px solid var(--color-card-border);
+}
+.kpi-goal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kpi-goal-caption {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--color-placeholder);
+  white-space: nowrap;
+}
+.kpi-goal-empty {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-style: italic; color: var(--color-placeholder);
+}
+.level-badge { color: #fff; gap: 4px; font-size: 10px; padding: 2px 8px; white-space: nowrap; }
+
 /* ── Skeletons ────────────────────────────────────────────────── */
 .kpi-skeleton    { height: 82px;  border-radius: var(--radius-lg); }
 .chart-skeleton  { height: 240px; border-radius: var(--radius-lg); flex: 1; }
@@ -1061,52 +1045,9 @@ function exportToExcel() {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;
 }
 .origem-item-count { font-size: 12px; font-weight: 700; color: var(--color-placeholder); flex-shrink: 0; }
+.origem-item-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .origem-bar-track { height: 5px; background: rgba(0,0,0,0.07); border-radius: 99px; overflow: hidden; }
 .origem-bar-fill  { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
-
-/* ── Meta de Qualificações ────────────────────────────────────── */
-.qualif-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px 28px;
-}
-.qualif-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.qualif-row-total {
-  grid-column: 1 / -1;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--color-card-border);
-}
-.qualif-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.qualif-name {
-  font-size: 13px; font-weight: 600; color: var(--color-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.qualif-status { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.qualif-count { font-size: 18px; font-weight: 800; color: var(--color-text); line-height: 1; }
-.qualif-badge { color: #fff; gap: 4px; font-size: 11px; padding: 2px 8px; }
-.qualif-track {
-  position: relative; height: 8px;
-  background: rgba(0,0,0,0.07); border-radius: 99px;
-}
-.qualif-fill {
-  height: 100%; border-radius: 99px;
-  background: var(--color-placeholder);
-  transition: width 0.5s ease;
-}
-.qualif-mark {
-  position: absolute; top: -3px; bottom: -3px;
-  width: 2px; margin-left: -2px;
-  background: var(--color-text); opacity: 0.35; border-radius: 1px;
-}
-.qualif-foot {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 4px 12px;
-  font-size: 11px; color: var(--color-placeholder);
-}
-.qualif-levels { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.qualif-level { display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
-.qualif-level.reached { color: var(--color-text); font-weight: 700; }
-.qualif-next { font-weight: 600; }
 
 /* ── Micro toggle ─────────────────────────────────────────────── */
 .micro-toggle {
